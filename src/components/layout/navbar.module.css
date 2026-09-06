@@ -1,0 +1,280 @@
+/* Base styles */
+.navItem {
+  padding: 1.25rem 0.75rem;
+  color: #d4d4d8;
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 200ms ease;
+  position: relative;
+}
+
+.navItem:hover {
+  color: #10b981;
+}
+
+/* Luxury Full-Width Dropdown Overlay */
+.dropdownMenu {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  background-color: #0d0d0d;
+  border-top: 1px solid #27272a;
+  border-bottom: 1px solid #27272a;
+  padding: 3rem 0;
+  z-index: 999;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Center Content Container */
+.menuContainer {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Category Multi-Column Grid */
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3rem;
+}
+
+/* Collection Grid */
+.collectionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem 3rem;
+}
+
+/* Column Category Header */
+.columnTitle {
+  font-weight: 700;
+  color: #10b981;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.1em;
+}
+
+.columnList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Normal Sub-links */
+.dropdownLink {
+  display: block;
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.dropdownLink:hover {
+  color: #ffffff;
+  transform: translateX(4px);
+}
+
+/* Bold Direct Links */
+.collectionLink {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 150ms ease;
+}
+
+.collectionLink:hover {
+  color: #ffffff;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS - FIXED FOR ALL DEVICES
+   ============================================ */
+
+/* iPad Mini & Tablets (768px - 1024px) - FIXED */
+@media (max-width: 1024px) and (min-width: 768px) {
+  /* Hide desktop nav, show hamburger */
+  .navItem {
+    display: none !important;
+  }
+  
+  /* Mobile hamburger should be visible */
+  .mobileHamburger {
+    display: block !important;
+  }
+  
+  .dropdownMenu {
+    display: none !important;
+  }
+}
+
+/* Standard Tablets & Small Laptops (768px - 1023px) */
+@media (max-width: 1023px) {
+  .dropdownMenu {
+    padding: 2rem 0;
+    display: none !important; /* Hide dropdowns on tablet */
+  }
+  
+  .menuContainer {
+    padding: 0 1.5rem;
+  }
+  
+  .categoryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  
+  .collectionGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem 2rem;
+  }
+  
+  .dropdownLink {
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+  
+  .collectionLink {
+    font-size: 0.8rem;
+  }
+  
+  /* Force mobile menu on tablet */
+  .desktopNav {
+    display: none !important;
+  }
+  
+  .mobileNavToggle {
+    display: flex !important;
+  }
+}
+
+/* Mobile Devices (below 768px) */
+@media (max-width: 767px) {
+  .dropdownMenu {
+    padding: 1.5rem 0;
+    max-height: 70vh;
+    display: none !important;
+  }
+  
+  .menuContainer {
+    padding: 0 1rem;
+  }
+  
+  .categoryGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .collectionGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .columnTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .columnList {
+    gap: 0.5rem;
+  }
+  
+  .dropdownLink {
+    font-size: 0.8rem;
+    padding: 0.25rem 0;
+    white-space: normal;
+  }
+  
+  .dropdownLink:hover {
+    transform: translateX(2px);
+  }
+  
+  .collectionLink {
+    font-size: 0.75rem;
+    padding: 0.25rem 0;
+  }
+  
+  .navItem {
+    font-size: 0.85rem;
+    padding: 1rem 0.5rem;
+    display: none !important;
+  }
+  
+  .desktopNav {
+    display: none !important;
+  }
+  
+  .mobileNavToggle {
+    display: flex !important;
+  }
+}
+
+/* Extra Small Devices (below 480px) */
+@media (max-width: 480px) {
+  .dropdownMenu {
+    padding: 1rem 0;
+  }
+  
+  .menuContainer {
+    padding: 0 0.75rem;
+  }
+  
+  .categoryGrid {
+    gap: 1rem;
+  }
+  
+  .collectionGrid {
+    gap: 0.75rem;
+  }
+  
+  .columnTitle {
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dropdownLink {
+    font-size: 0.75rem;
+  }
+  
+  .collectionLink {
+    font-size: 0.7rem;
+  }
+}
+
+/* Fix for iPad Mini portrait mode */
+@media (width: 768px) and (height: 1024px) {
+  .navItem {
+    display: none !important;
+  }
+  
+  .dropdownMenu {
+    display: none !important;
+  }
+  
+  /* Make hamburger visible */
+  .mobileHamburgerBtn {
+    display: flex !important;
+  }
+}
+
+/* Fix for iPad Mini landscape mode */
+@media (width: 1024px) and (height: 768px) {
+  .navItem {
+    display: block !important;
+  }
+  
+  .mobileHamburgerBtn {
+    display: none !important;
+  }
+}

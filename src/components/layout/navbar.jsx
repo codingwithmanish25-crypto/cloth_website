@@ -1,0 +1,484 @@
+"use client";
+
+import Link from "next/link";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import styles from "@/components/layout/navbar.module.css";
+import { Search, ShoppingCart, User, Menu, X, Plus, Minus } from "lucide-react";
+import Image from "next/image";
+
+const navbar = () => {
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState("category");
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
+  const timeoutRef = useRef(null);
+
+  // Detect screen size for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      setIsDesktop(width >= 1024); // Desktop breakpoint
+      
+      // Auto-close mobile menu on desktop
+      if (width >= 1024 && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    
+    // Prevent body scroll when mobile menu is open
+    if (isMobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.body.style.overflow = "unset";
+    };
+  }, [isMobileOpen]);
+
+  const shopCategory = [
+    {
+      title: "T-Shirt",
+      links: ["Relaxed Fit", "Oversized Fit", "Sleeveless T-shirt"],
+    },
+    {
+      title: "Bottomwear",
+      links: ["Cargo", "Joggers", "Shorts", "Denims"],
+    },
+    {
+      title: "Winter Wear",
+      links: ["Jacket", "Sweatshirt", "Hoodies", "Long Coat"],
+    },
+    {
+      title: "Direct Links",
+      isDirect: true,
+      links: ["Polo", "Shirts", "Sale", "Socks", "Luxe"],
+    },
+  ];
+
+  const shopCollection = [
+    "Wildlands Collection",
+    "Drift Joggers Collection",
+    "Ember steel winter '24",
+    "The conqueror autumn winter 2023",
+    "Summer spring 2024",
+    "Knit wear collection",
+    "Untamed wild",
+  ];
+
+  const policy = [
+    "Return Order",
+    "Privacy Policy",
+    "Refund Policy",
+    "Shipping Policy",
+  ];
+
+  const menuVariants = {
+    hidden: { opacity: 0, y: -20, scaleY: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scaleY: 1,
+      transition: { duration: 0.2, ease: "easeOut" },
+    },
+    exit: { opacity: 0, y: -10, scaleY: 0.95, transition: { duration: 0.15 } },
+  };
+
+  const toggleAccordion = (index) => {
+    setExpandedCategory(expandedCategory === index ? null : index);
+  };
+
+  const handleMouseEnter = (menu) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (windowWidth >= 1024) {
+      setActiveMenu(menu);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setActiveMenu(null);
+    }, 100);
+  };
+
+  return (
+    <>
+      <nav className="w-full bg-[#0a0a0a] shadow-sm border-b border-[#27272a] px-3 sm:px-4 md:px-6 lg:px-8 relative z-40 flex">
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between h-14 sm:h-16 md:h-20 relative">
+          
+          {/* LEFT SECTION: Mobile Hamburger + Desktop Nav */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-start h-full">
+            {/* Mobile Hamburger Icon - Always visible on tablet and below */}
+            <button
+              onClick={() => setIsMobileOpen(true)}
+              className="lg:hidden text-white p-1 focus:outline-none cursor-pointer hover:text-[#10b981] transition-colors"
+              aria-label="Open Menu"
+            >
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Desktop Navigation Links - Hidden on tablet */}
+            <ul className="hidden lg:flex items-center gap-4 xl:gap-6 2xl:gap-8 h-full list-none m-0 p-0 text-white whitespace-nowrap">
+              {/* Category */}
+              <li
+                className={styles.navItem}
+                onMouseEnter={() => handleMouseEnter("category")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Link href="/shop_by_category">Shop By Category</Link>
+                <AnimatePresence>
+                  {activeMenu === "category" && windowWidth >= 1024 && (
+                    <motion.div
+                      className={styles.dropdownMenu}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={menuVariants}
+                      onMouseEnter={() => setActiveMenu("category")}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <div className={styles.menuContainer}>
+                        <div className={styles.categoryGrid}>
+                          {shopCategory.map((col, index) => (
+                            <div key={index}>
+                              {!col.isDirect ? (
+                                <>
+                                  <h4 className={styles.columnTitle}>{col.title}</h4>
+                                  <div className={styles.columnList}>
+                                    {col.links.map((link) => (
+                                      <Link
+                                        key={link}
+                                        href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                        className={styles.dropdownLink}
+                                      >
+                                        {link}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="flex flex-col gap-3">
+                                  {col.links.map((link) => (
+                                    <Link
+                                      key={link}
+                                      href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                      className={styles.collectionLink}
+                                    >
+                                      {link}
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+
+              {/* Collection */}
+              <li
+                className={styles.navItem}
+                onMouseEnter={() => handleMouseEnter("collection")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Link href="/shop_by_collection">Shop By Collection</Link>
+                <AnimatePresence>
+                  {activeMenu === "collection" && windowWidth >= 1024 && (
+                    <motion.div
+                      className={styles.dropdownMenu}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={menuVariants}
+                      onMouseEnter={() => setActiveMenu("collection")}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <div className={styles.menuContainer}>
+                        <div className={styles.collectionGrid}>
+                          {shopCollection.map((item) => (
+                            <Link
+                              key={item}
+                              href={`/collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                              className={styles.collectionLink}
+                            >
+                              {item}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+
+              {/* Sale */}
+              <li className={styles.navItem}>
+                <Link href="/sales">Sale</Link>
+              </li>
+
+              {/* Policy */}
+              <li
+                className={styles.navItem}
+                onMouseEnter={() => handleMouseEnter("policy")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Link href="/policy">Policy</Link>
+                <AnimatePresence>
+                  {activeMenu === "policy" && windowWidth >= 1024 && (
+                    <motion.div
+                      className={styles.dropdownMenu}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={menuVariants}
+                      onMouseEnter={() => setActiveMenu("policy")}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <div className={styles.menuContainer}>
+                        <div className={styles.collectionGrid}>
+                          {policy.map((item) => (
+                            <Link
+                              key={item}
+                              href={`/policy/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                              className={styles.collectionLink}
+                            >
+                              {item}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+
+              <li className={styles.navItem}>
+                <Link href="/contact-us">Contact Us</Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* CENTER SECTION: Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:justify-center shrink-0">
+            <Link href="/" className="flex items-center justify-center">
+              <Image
+                src="/images.png"
+                alt="Logo"
+                width={100}
+                height={25}
+                className="max-h-5 sm:max-h-7 md:max-h-10 lg:max-h-12 w-auto object-contain"
+                priority
+              />
+            </Link>
+          </div>
+
+          {/* RIGHT SECTION: Search, Profile & Cart Icons */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 md:gap-3 lg:gap-5 xl:gap-6 flex-1 h-full text-white">
+            <button 
+              className="p-1 hover:text-[#10b981] transition-colors focus:outline-none cursor-pointer" 
+              aria-label="Search"
+            >
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Link>
+            <Link href="/cart" className="p-1 hover:text-[#10b981] transition-colors relative" aria-label="Cart">
+              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="absolute -top-1 -right-1 bg-[#10b981] text-white text-[8px] sm:text-[10px] rounded-full min-w-[16px] sm:min-w-[18px] h-4 sm:h-[18px] flex items-center justify-center px-1">
+                0
+              </span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* MOBILE OVERLAY SIDEBAR DRAWER */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            {/* Backdrop Layer */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileOpen(false)}
+              className="fixed inset-0 bg-black/70 z-50 backdrop-blur-sm"
+            />
+
+            {/* Side Drawer Panel */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[340px] sm:max-w-[360px] bg-[#ffffff] text-[#0a0a0a] z-50 flex flex-col shadow-2xl overflow-y-auto"
+            >
+              {/* Top Header Bar */}
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+                <Link href="/" onClick={() => setIsMobileOpen(false)} className="flex items-center">
+                  <Image
+                    src="/images.png"
+                    alt="Logo"
+                    width={70}
+                    height={18}
+                    className="max-h-5 sm:max-h-6 w-auto object-contain"
+                  />
+                </Link>
+                <button
+                  onClick={() => setIsMobileOpen(false)}
+                  className="p-1 text-black hover:opacity-70"
+                  aria-label="Close Menu"
+                >
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex border-b border-gray-200 text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-gray-50 p-1 gap-1">
+                <button
+                  onClick={() => setMobileTab("category")}
+                  className={`flex-1 py-2 sm:py-2.5 text-center transition-all rounded ${
+                    mobileTab === "category"
+                      ? "bg-black text-white shadow-sm"
+                      : "text-gray-600 hover:text-black"
+                  }`}
+                >
+                  Category
+                </button>
+                <button
+                  onClick={() => setMobileTab("collection")}
+                  className={`flex-1 py-2 sm:py-2.5 text-center transition-all rounded ${
+                    mobileTab === "collection"
+                      ? "bg-black text-white shadow-sm"
+                      : "text-gray-600 hover:text-black"
+                  }`}
+                >
+                  Collection
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto py-2">
+                {mobileTab === "category" && (
+                  <div className="flex flex-col">
+                    {shopCategory.map((cat, idx) => (
+                      <div key={idx} className="border-b border-gray-100">
+                        {!cat.isDirect ? (
+                          <>
+                            <button
+                              onClick={() => toggleAccordion(idx)}
+                              className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 text-sm font-medium text-left text-gray-800 hover:bg-gray-50"
+                            >
+                              <span className="text-xs sm:text-sm">{cat.title}</span>
+                              {expandedCategory === idx ? (
+                                <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
+                              ) : (
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
+                              )}
+                            </button>
+
+                            <AnimatePresence>
+                              {expandedCategory === idx && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden bg-gray-50/60 px-5 sm:px-6"
+                                >
+                                  {cat.links.map((link) => (
+                                    <Link
+                                      key={link}
+                                      href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                      onClick={() => setIsMobileOpen(false)}
+                                      className="block py-2 sm:py-2.5 text-[11px] sm:text-xs text-gray-600 hover:text-black border-b border-gray-100 last:border-0"
+                                    >
+                                      {link}
+                                    </Link>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        ) : (
+                          <div className="py-1">
+                            {cat.links.map((link) => (
+                              <Link
+                                key={link}
+                                href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                onClick={() => setIsMobileOpen(false)}
+                                className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-800 hover:bg-gray-50"
+                              >
+                                {link}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {mobileTab === "collection" && (
+                  <div className="flex flex-col py-1">
+                    {shopCollection.map((item) => (
+                      <Link
+                        key={item}
+                        href={`/collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                        onClick={() => setIsMobileOpen(false)}
+                        className="px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-800 hover:bg-gray-50 border-b border-gray-100"
+                      >
+                        {item}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Additional Direct Links */}
+                <div className="mt-4 border-t border-gray-200 pt-2">
+                  <Link
+                    href="/sales"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-red-600 hover:bg-gray-50"
+                  >
+                    Sale
+                  </Link>
+                  <Link
+                    href="/policy"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Policy
+                  </Link>
+                  <Link
+                    href="/contact-us"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Contact Us
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default navbar;

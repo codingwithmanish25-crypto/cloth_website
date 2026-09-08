@@ -6,8 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import styles from "@/components/layout/navbar.module.css";
 import { Search, ShoppingCart, User, Menu, X, Plus, Minus } from "lucide-react";
 import Image from "next/image";
+import Cart from "../cart";
+import { useCart } from "@/context/CartContext";
 
-const navbar = () => {
+const Navbar = () => {
+  // Context se cart state aur handlers consume karein
+  const { isCartOpen, openCart, closeCart, cartItems } = useCart();
+
   const [activeMenu, setActiveMenu] = useState(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState("category");
@@ -16,14 +21,16 @@ const navbar = () => {
   const [windowWidth, setWindowWidth] = useState(0);
   const timeoutRef = useRef(null);
 
-  // Detect screen size for responsive behavior
+  // Total dynamic item quantity calculate karein
+  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  // Screen size aur body scroll control
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       setWindowWidth(width);
-      setIsDesktop(width >= 1024); // Desktop breakpoint
+      setIsDesktop(width >= 1024);
       
-      // Auto-close mobile menu on desktop
       if (width >= 1024 && isMobileOpen) {
         setIsMobileOpen(false);
       }
@@ -32,8 +39,7 @@ const navbar = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     
-    // Prevent body scroll when mobile menu is open
-    if (isMobileOpen) {
+    if (isMobileOpen || isCartOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -43,7 +49,7 @@ const navbar = () => {
       window.removeEventListener("resize", handleResize);
       document.body.style.overflow = "unset";
     };
-  }, [isMobileOpen]);
+  }, [isMobileOpen, isCartOpen]);
 
   const shopCategory = [
     {
@@ -117,9 +123,8 @@ const navbar = () => {
       <nav className="w-full bg-[#0a0a0a] shadow-sm border-b border-[#27272a] px-3 sm:px-4 md:px-6 lg:px-8 relative z-40 flex">
         <div className="w-full max-w-7xl mx-auto flex items-center justify-between h-14 sm:h-16 md:h-20 relative">
           
-          {/* LEFT SECTION: Mobile Hamburger + Desktop Nav */}
+          {/* LEFT SECTION */}
           <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-start h-full">
-            {/* Mobile Hamburger Icon - Always visible on tablet and below */}
             <button
               onClick={() => setIsMobileOpen(true)}
               className="lg:hidden text-white p-1 focus:outline-none cursor-pointer hover:text-[#10b981] transition-colors"
@@ -128,9 +133,7 @@ const navbar = () => {
               <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            {/* Desktop Navigation Links - Hidden on tablet */}
             <ul className="hidden lg:flex items-center gap-4 xl:gap-6 2xl:gap-8 h-full list-none m-0 p-0 text-white whitespace-nowrap">
-              {/* Category */}
               <li
                 className={styles.navItem}
                 onMouseEnter={() => handleMouseEnter("category")}
@@ -189,7 +192,6 @@ const navbar = () => {
                 </AnimatePresence>
               </li>
 
-              {/* Collection */}
               <li
                 className={styles.navItem}
                 onMouseEnter={() => handleMouseEnter("collection")}
@@ -225,12 +227,10 @@ const navbar = () => {
                 </AnimatePresence>
               </li>
 
-              {/* Sale */}
               <li className={styles.navItem}>
                 <Link href="/sales">Sale</Link>
               </li>
 
-              {/* Policy */}
               <li
                 className={styles.navItem}
                 onMouseEnter={() => handleMouseEnter("policy")}
@@ -272,7 +272,7 @@ const navbar = () => {
             </ul>
           </div>
 
-          {/* CENTER SECTION: Logo */}
+          {/* CENTER SECTION */}
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:justify-center shrink-0">
             <Link href="/" className="flex items-center justify-center">
               <Image
@@ -286,7 +286,7 @@ const navbar = () => {
             </Link>
           </div>
 
-          {/* RIGHT SECTION: Search, Profile & Cart Icons */}
+          {/* RIGHT SECTION */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 md:gap-3 lg:gap-5 xl:gap-6 flex-1 h-full text-white">
             <button 
               className="p-1 hover:text-[#10b981] transition-colors focus:outline-none cursor-pointer" 
@@ -297,12 +297,20 @@ const navbar = () => {
             <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
               <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
-            <Link href="/cart" className="p-1 hover:text-[#10b981] transition-colors relative" aria-label="Cart">
+            
+            {/* CART BUTTON WITH CONTEXT TRIGGER AND REAL-TIME COUNTER */}
+            <button 
+              onClick={openCart}
+              className="p-1 hover:text-[#10b981] transition-colors relative focus:outline-none cursor-pointer" 
+              aria-label="Cart"
+            >
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="absolute -top-1 -right-1 bg-[#10b981] text-white text-[8px] sm:text-[10px] rounded-full min-w-[16px] sm:min-w-[18px] h-4 sm:h-[18px] flex items-center justify-center px-1">
-                0
-              </span>
-            </Link>
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#10b981] text-white text-[8px] sm:text-[10px] rounded-full min-w-[16px] sm:min-w-[18px] h-4 sm:h-[18px] flex items-center justify-center px-1 font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </nav>
@@ -311,7 +319,6 @@ const navbar = () => {
       <AnimatePresence>
         {isMobileOpen && (
           <>
-            {/* Backdrop Layer */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -319,8 +326,6 @@ const navbar = () => {
               onClick={() => setIsMobileOpen(false)}
               className="fixed inset-0 bg-black/70 z-50 backdrop-blur-sm"
             />
-
-            {/* Side Drawer Panel */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -328,7 +333,6 @@ const navbar = () => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[340px] sm:max-w-[360px] bg-[#ffffff] text-[#0a0a0a] z-50 flex flex-col shadow-2xl overflow-y-auto"
             >
-              {/* Top Header Bar */}
               <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
                 <Link href="/" onClick={() => setIsMobileOpen(false)} className="flex items-center">
                   <Image
@@ -348,7 +352,6 @@ const navbar = () => {
                 </button>
               </div>
 
-              {/* Navigation Tabs */}
               <div className="flex border-b border-gray-200 text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-gray-50 p-1 gap-1">
                 <button
                   onClick={() => setMobileTab("category")}
@@ -372,7 +375,6 @@ const navbar = () => {
                 </button>
               </div>
 
-              {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto py-2">
                 {mobileTab === "category" && (
                   <div className="flex flex-col">
@@ -448,7 +450,6 @@ const navbar = () => {
                   </div>
                 )}
 
-                {/* Additional Direct Links */}
                 <div className="mt-4 border-t border-gray-200 pt-2">
                   <Link
                     href="/sales"
@@ -477,8 +478,11 @@ const navbar = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* SIDE CART DRAWER COMPONENT */}
+      <Cart />
     </>
   );
 };
 
-export default navbar;
+export default Navbar;

@@ -6,57 +6,57 @@ import ProductInfo from "@/components/product-detail/ProductInfo";
 import CategoryReviews from "@/components/product-detail/CategoryReviews";
 import ProductFaq from "@/components/product-detail/ProductFaq";
 
-// Demo Data
-const productsData = [
-  {
-    id: 1,
-    title: "EMPEROR RELAXED FIT T-SHIRT",
-    price: 1599,
-    originalPrice: 1999,
-    fitTag: "RELAXED FIT",
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    images: [
-      "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-      "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-      "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    ],
-    slug: "the-glory-arc-relaxed-fit",
-    description: "High quality relaxed fit t-shirt made with 100% premium cotton.",
-  },
-  {
-    id: 2,
-    title: "SKY WALKER NAVY OVERSIZED T-SHIRT",
-    price: 1599,
-    originalPrice: 1999,
-    fitTag: "OVERSIZED FIT",
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    images: [
-      "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    ],
-    slug: "sky-walker-navy-oversized",
-    description: "Trendy oversized fit t-shirt perfect for streetwear style.",
-  },
-];
+// Fetcher Function
+async function getProductBySlug(slug) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const res = await fetch(`${baseUrl}/api/products/${slug}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error) {
+    console.error("Fetch product error:", error);
+    return null;
+  }
+}
 
 export default async function ProductDetailPage({ params }) {
-  // Await params for Next.js 15 compatibility
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
 
-  const product = productsData.find((p) => p.slug === slug);
+  // 1. Fetch from Backend / API
+  const productData = await getProductBySlug(slug);
 
-  if (!product) {
+  // 2. Fallback check: If API fails, show 404
+  if (!productData) {
     notFound();
   }
+
+  // 3. Normalize arrays safely
+  const images = Array.isArray(productData.images) 
+    ? productData.images 
+    : [productData.images || "/placeholder.jpg"];
+
+  const sizes = Array.isArray(productData.sizes) 
+    ? productData.sizes 
+    : ["S", "M", "L", "XL"];
+
+  const product = {
+    ...productData,
+    images,
+    sizes,
+  };
 
   return (
     <div className="bg-black text-white min-h-screen">
       <div className="max-w-[1440px] mx-auto px-4 py-8">
-        {/* Section 1 & 2: Top Grid (Gallery + Details) */}
+        {/* Top Grid (Gallery + Info) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7">
             <ProductGallery 
-              images={product.images || []} 
+              images={product.images} 
               title={product.title} 
               fitTag={product.fitTag} 
             />

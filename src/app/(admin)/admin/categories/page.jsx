@@ -1,63 +1,101 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Edit2, Trash2, Check, X, FolderTree } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Edit2, Trash2, Check, X, FolderTree, Loader2 } from "lucide-react";
 
 export default function CategoriesPage() {
-  // Demo Categories List (Supabase 'categories' table se fetch hoga)
-  const [categories, setCategories] = useState([
-    { id: 1, name: "T-Shirts", slug: "t-shirts", productCount: 12 },
-    { id: 2, name: "Hoodies", slug: "hoodies", productCount: 8 },
-    { id: 3, name: "Joggers", slug: "joggers", productCount: 5 },
-  ]);
-
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
 
-  // 1. ADD CATEGORY
-  const handleAddCategory = (e) => {
+  // 1. FETCH CATEGORIES FROM PRISMA API
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/categories");
+      const data = await res.json();
+      if (Array.isArray(data)) setCategories(data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // 2. ADD CATEGORY
+  const handleAddCategory = async (e) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
 
-    const newItem = {
-      id: Date.now(),
-      name: newCategory,
-      slug: newCategory.toLowerCase().replace(/\s+/g, "-"),
-      productCount: 0,
-    };
+    try {
+      const slug = newCategory.toLowerCase().trim().replace(/\s+/g, "-");
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategory, slug }),
+      });
 
-    setCategories([...categories, newItem]);
-    setNewCategory("");
+      if (res.ok) {
+        setNewCategory("");
+        fetchCategories();
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to add category");
+      }
+    } catch (err) {
+      console.error("Add Category Error:", err);
+    }
   };
 
-  // 2. START EDITING
+  // 3. EDIT CATEGORY
   const handleStartEdit = (cat) => {
     setEditingId(cat.id);
     setEditingName(cat.name);
   };
 
-  // SAVE UPDATE
-  const handleSaveEdit = (id) => {
-    setCategories(
-      categories.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              name: editingName,
-              slug: editingName.toLowerCase().replace(/\s+/g, "-"),
-            }
-          : item
-      )
-    );
-    setEditingId(null);
-    setEditingName("");
+  const handleSaveEdit = async (id) => {
+    try {
+      const slug = editingName.toLowerCase().trim().replace(/\s+/g, "-");
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editingName, slug }),
+      });
+
+      if (res.ok) {
+        setEditingId(null);
+        setEditingName("");
+        fetchCategories();
+      } else {
+        alert("Failed to update category");
+      }
+    } catch (err) {
+      console.error("Edit Category Error:", err);
+    }
   };
 
-  // 3. DELETE CATEGORY
-  const handleDeleteCategory = (id) => {
-    if (confirm("Are you sure you want to delete this category?")) {
-      setCategories(categories.filter((item) => item.id !== id));
+  // 4. DELETE CATEGORY
+  const handleDeleteCategory = async (id) => {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        fetchCategories();
+      } else {
+        alert("Failed to delete category");
+      }
+    } catch (err) {
+      console.error("Delete Category Error:", err);
     }
   };
 
@@ -106,72 +144,89 @@ export default function CategoriesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/60">
-            {categories.map((cat) => (
-              <tr key={cat.id} className="hover:bg-zinc-900/30 transition-colors">
-                <td className="py-3.5 px-4 font-medium text-white">
-                  {editingId === cat.id ? (
-                    <input
-                      type="text"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
-                    />
-                  ) : (
-                    cat.name
-                  )}
-                </td>
-
-                <td className="py-3.5 px-4 font-mono text-zinc-400">
-                  {cat.slug}
-                </td>
-
-                <td className="py-3.5 px-4">
-                  <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">
-                    {cat.productCount} Items
-                  </span>
-                </td>
-
-                <td className="py-3.5 px-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {editingId === cat.id ? (
-                      <>
-                        <button
-                          onClick={() => handleSaveEdit(cat.id)}
-                          className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded transition-colors"
-                          title="Save"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded transition-colors"
-                          title="Cancel"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleStartEdit(cat)}
-                          className="p-1.5 bg-zinc-800/60 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(cat.id)}
-                          className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900/60 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="py-8 text-center text-zinc-500">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                    Loading categories...
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : categories.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="py-8 text-center text-zinc-500">
+                  No categories found. Create one above!
+                </td>
+              </tr>
+            ) : (
+              categories.map((cat) => (
+                <tr key={cat.id} className="hover:bg-zinc-900/30 transition-colors">
+                  <td className="py-3.5 px-4 font-medium text-white">
+                    {editingId === cat.id ? (
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        className="bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                      />
+                    ) : (
+                      cat.name
+                    )}
+                  </td>
+
+                  <td className="py-3.5 px-4 font-mono text-zinc-400">
+                    {cat.slug}
+                  </td>
+
+                  <td className="py-3.5 px-4">
+                    <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">
+                      {cat.productCount ?? 0} Items
+                    </span>
+                  </td>
+
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {editingId === cat.id ? (
+                        <>
+                          <button
+                            onClick={() => handleSaveEdit(cat.id)}
+                            className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleStartEdit(cat)}
+                            className="p-1.5 bg-zinc-800/60 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900/60 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

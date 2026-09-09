@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
@@ -11,6 +12,7 @@ export default function AddProductPage() {
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
+    categoryId: "",
     price: "",
     originalPrice: "",
     fitTag: "RELAXED FIT",
@@ -21,8 +23,23 @@ export default function AddProductPage() {
     images: [],
   });
 
+  const [categories, setCategories] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Fetch Categories on Mount
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
+        if (Array.isArray(data)) setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   // Auto Generate Slug on Title Change
   const handleTitleChange = (e) => {
@@ -75,25 +92,85 @@ export default function AddProductPage() {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Submit Handler (Supabase Upload Logic Template)
+  // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // 1. Image upload to Supabase Storage Bucket 'products' (when connected)
-      // 2. Insert product JSON to Supabase Table 'products'
-      
-      console.log("Submitting Product Payload:", {
-        ...formData,
-        price: Number(formData.price),
-        originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
+      if (imageFiles.length === 0) {
+        alert("At least one product image is required.");
+        setLoading(false);
+        return;
+      }
+
+      const uploadedImageUrls = [];
+
+      // 1. Upload Images to Supabase Storage Bucket
+      for (const file of imageFiles) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `items/${fileName}`;
+
+        const { error } = await supabase.storage
+          .from("products")
+          .upload(filePath, file);
+
+        if (error) {
+          throw new Error(`Storage Upload Error: ${error.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("products")
+          .getPublicUrl(filePath);
+
+        uploadedImageUrls.push(publicUrlData.publicUrl);
+      }
+
+      // 2. Insert product via Next.js API Route `/api/products`
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          categoryId: formData.categoryId || null,
+          price: Number(formData.price),
+          originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
+          fitTag: formData.fitTag,
+          description: formData.description,
+          isSoldOut: formData.isSoldOut,
+          availableSizes: formData.availableSizes,
+          images: uploadedImageUrls,
+        }),
       });
 
-      alert("Product details submitted successfully!");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to add product");
+      }
+
+      alert("Product created successfully!");
+
+      // Reset Form State
+      setFormData({
+        title: "",
+        slug: "",
+        categoryId: "",
+        price: "",
+        originalPrice: "",
+        fitTag: "RELAXED FIT",
+        description: "",
+        isSoldOut: false,
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
+        availableSizes: ["S", "M", "L", "XL"],
+        images: [],
+      });
+      setImageFiles([]);
     } catch (error) {
       console.error("Error adding product:", error);
-      alert("Failed to add product!");
+      alert(`Failed to add product: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -112,7 +189,7 @@ export default function AddProductPage() {
           </Link>
           <div>
             <h2 className="text-xl font-bold text-white">Add New Product</h2>
-            <p className="text-xs text-zinc-400">Fill in details matching your ProductCard schema.</p>
+            <p className="text-xs text-zinc-400">Fill in details matching your schema.</p>
           </div>
         </div>
 
@@ -129,7 +206,6 @@ export default function AddProductPage() {
       <form id="add-product-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column - Main Details */}
         <div className="md:col-span-2 space-y-5">
-          {/* Title & Slug */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Product Title *</label>
@@ -203,7 +279,7 @@ export default function AddProductPage() {
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(idx)}
-                    className="absolute top-1 right-1 bg-black/80 text-red-400 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 bg-black/80 text-red-400 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -219,8 +295,25 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* Right Column - Attributes & Inventory */}
+        {/* Right Column - Category, Attributes & Inventory */}
         <div className="space-y-5">
+          {/* Category Dropdown Selection */}
+          <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-2">
+            <label className="block text-xs font-semibold text-zinc-300 uppercase">Category</label>
+            <select
+              value={formData.categoryId}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+            >
+              <option value="">Select Category (Optional)</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Fit Tag & Availability */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div>
@@ -251,9 +344,8 @@ export default function AddProductPage() {
           {/* Sizes Selection */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-3">
             <label className="block text-xs font-semibold text-zinc-300 uppercase">
-              Available Sizes (Toggle Status)
+              Available Sizes
             </label>
-            <p className="text-[10px] text-zinc-500">Unselected sizes will show strike-through on ProductCard.</p>
 
             <div className="grid grid-cols-3 gap-2 pt-2">
               {AVAILABLE_SIZES.map((size) => {
@@ -263,7 +355,7 @@ export default function AddProductPage() {
                     key={size}
                     type="button"
                     onClick={() => handleSizeToggle(size)}
-                    className={`py-2 text-xs font-bold rounded-lg border transition-all ${
+                    className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                       isSelected
                         ? "bg-emerald-500/10 border-emerald-500 text-emerald-400"
                         : "bg-zinc-950 border-zinc-800 text-zinc-500 line-through"

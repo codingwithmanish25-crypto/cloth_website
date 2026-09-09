@@ -1,84 +1,111 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ProductCard from "@/components/productcard";
 import FilterSidebar from "./FilterSidebar";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Loader2 } from "lucide-react";
 
 const ShopByCategory = () => {
-  const initialProducts = [
-    {
-      id: 1,
-      title: "THE GLORY ARC RELAXED FIT T-SHIRT",
-      price: 1599,
-      category: "T-Shirt",
-      fitTag: "Relaxed Fit",
-      isSoldOut: false,
-      sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-      availableSizes: ["XS", "S"],
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-      slug: "the-glory-arc-relaxed-fit",
-    },
-    {
-      id: 2,
-      title: "SKY WALKER NAVY OVERSIZED T-SHIRT",
-      price: 1599,
-      originalPrice: 1999,
-      category: "T-Shirt",
-      fitTag: "Oversized Fit",
-      isSoldOut: true,
-      sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-      availableSizes: [],
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-      slug: "sky-walker-navy-oversized",
-    },
-    {
-      id: 3,
-      title: "TRINITY WHITE OVERSIZED T-SHIRT",
-      price: 1799,
-      originalPrice: 2199,
-      category: "T-Shirt",
-      fitTag: "Oversized Fit",
-      isSoldOut: false,
-      sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-      availableSizes: ["L", "XL", "XXL"],
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-      slug: "trinity-white-oversized",
-    },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [filters, setFilters] = useState({
     sortBy: "recommended",
     category: [],
     fit: [],
     size: [],
-    maxPrice: 5000,
+    maxPrice: 50000,
     inStockOnly: false,
   });
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  // Fetch Products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setProducts(data);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
 
   const filteredProducts = useMemo(() => {
-    return initialProducts
+    return products
       .filter((product) => {
-        if (filters.category.length > 0 && !filters.category.includes(product.category)) return false;
-        if (filters.fit.length > 0 && !filters.fit.includes(product.fitTag)) return false;
-        if (filters.size.length > 0 && !filters.size.some((s) => product.availableSizes.includes(s))) return false;
-        if (product.price > filters.maxPrice) return false;
-        if (filters.inStockOnly && product.isSoldOut) return false;
+        // Safe Category Resolution
+        const categoryName = 
+          typeof product.category === "object" ? product.category?.name : product.category;
+
+        if (
+          filters.category && 
+          filters.category.length > 0 && 
+          (!categoryName || !filters.category.includes(categoryName))
+        ) {
+          return false;
+        }
+
+        // Safe Fit Tag Check
+        if (
+          filters.fit && 
+          filters.fit.length > 0 && 
+          (!product.fitTag || !filters.fit.includes(product.fitTag))
+        ) {
+          return false;
+        }
+
+        // Safe Sizes Check
+        const sizesList = Array.isArray(product.availableSizes) 
+          ? product.availableSizes 
+          : Array.isArray(product.sizes) 
+          ? product.sizes 
+          : [];
+
+        if (
+          filters.size && 
+          filters.size.length > 0 && 
+          !filters.size.some((s) => sizesList.includes(s))
+        ) {
+          return false;
+        }
+
+        // Safe Numeric Price Parse Check
+        const numericPrice = Number(product.price) || 0;
+        if (filters.maxPrice && numericPrice > filters.maxPrice) {
+          return false;
+        }
+
+        // Stock Filter Check
+        if (filters.inStockOnly && product.isSoldOut) {
+          return false;
+        }
+
         return true;
       })
       .sort((a, b) => {
-        if (filters.sortBy === "price_asc") return a.price - b.price;
-        if (filters.sortBy === "price_desc") return b.price - a.price;
-        if (filters.sortBy === "alpha_asc") return a.title.localeCompare(b.title);
-        if (filters.sortBy === "alpha_desc") return b.title.localeCompare(a.title);
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+
+        if (filters.sortBy === "price_asc") return priceA - priceB;
+        if (filters.sortBy === "price_desc") return priceB - priceA;
+        if (filters.sortBy === "alpha_asc") return (a.title || "").localeCompare(b.title || "");
+        if (filters.sortBy === "alpha_desc") return (b.title || "").localeCompare(b.title || "");
         return 0;
       });
-  }, [filters]);
+  }, [products, filters]);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-6 md:py-8">
@@ -88,7 +115,7 @@ const ShopByCategory = () => {
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wide">Shop By Category</h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Showing {filteredProducts.length} of {initialProducts.length} products
+            Showing {filteredProducts.length} of {products.length} products
           </p>
         </div>
 
@@ -131,7 +158,6 @@ const ShopByCategory = () => {
                 </button>
               </div>
 
-              {/* Sidebar Component */}
               <FilterSidebar onFilterChange={handleFilterChange} />
             </div>
           </div>
@@ -139,7 +165,12 @@ const ShopByCategory = () => {
 
         {/* MAIN PRODUCT GRID SECTION */}
         <main className="flex-1">
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-20 text-zinc-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+              <span>Fetching latest catalog...</span>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {filteredProducts.map((item) => (
                 <ProductCard key={item.id} product={item} />

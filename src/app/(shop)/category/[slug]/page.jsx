@@ -1,13 +1,14 @@
-import ShopByCategory from '@/components/shopByCategory/shopByCategory'
-import React from 'react'
+import ShopByCategory from '@/components/shopByCategory/shopByCategory';
+import React from 'react';
 
-const DynamicCategory = () => {
-    const {slug} = params
+const DynamicCategory = async ({ params }) => {
+  const { slug } = await params; // Next.js 15+ Async params support
+
   return (
     <div>
-        <ShopByCategory/>
+      <ShopByCategory />
     </div>
-  )
-}
+  );
+};
 
-export default DynamicCategory
+export default DynamicCategory;

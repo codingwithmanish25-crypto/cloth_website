@@ -1,64 +1,42 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req) {
-  try {
-    const body = await req.json();
-
-    const product = await prisma.product.create({
-      data: {
-        title: body.title,
-        slug: body.slug,
-        price: body.price,
-        originalPrice: body.originalPrice || null,
-        fitTag: body.fitTag,
-        description: body.description,
-        isSoldOut: body.isSoldOut,
-        availableSizes: body.availableSizes,
-        images: body.images,
-        // String categoryId ko BigInt me convert kar ke relation create karein
-        categoryId: body.categoryId ? BigInt(body.categoryId) : null,
-      },
-    });
-
-    // Response ke liye BigInt serialization fix
-    const formattedProduct = JSON.parse(
-      JSON.stringify(product, (key, value) =>
-        typeof value === "bigint" ? value.toString() : value
-      )
-    );
-
-    return NextResponse.json({ success: true, product: formattedProduct });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+function serializeProduct(product) {
+  if (!product) return null;
+  return JSON.parse(
+    JSON.stringify(product, (key, value) =>
+      typeof value === "bigint" ? value.toString() : value
+    )
+  );
 }
 
-
-
-export async function GET() {
+// GET /api/products -> Fetch All Products or Search Products
+export async function GET(req) {
   try {
+    const query = new URL(req.url).searchParams.get("q")?.trim() || "";
+    const where = query
+      ? {
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { slug: { contains: query, mode: "insensitive" } },
+            { fitTag: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+          ],
+        }
+      : undefined;
+
     const products = await prisma.product.findMany({
-      include: {
-        category: {
-          select: { name: true },
-        },
-      },
+      where,
       orderBy: { createdAt: "desc" },
+      ...(query ? { take: 8 } : {}),
     });
 
-    // BigInt aur Decimal values ko JS serializable objects me convert karna mandatory hai
-    const formattedProducts = products.map((prod) => ({
-      ...prod,
-      id: prod.id.toString(),
-      categoryId: prod.categoryId ? prod.categoryId.toString() : null,
-      price: Number(prod.price),
-      originalPrice: prod.originalPrice ? Number(prod.originalPrice) : null,
-    }));
-
-    return NextResponse.json(formattedProducts, { status: 200 });
+    return NextResponse.json(serializeProduct(products), { status: 200 });
   } catch (error) {
-    console.error("GET Products Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("GET All Products Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch products", details: error.message },
+      { status: 500 }
+    );
   }
 }

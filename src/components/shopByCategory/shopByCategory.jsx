@@ -46,40 +46,55 @@ const ShopByCategory = () => {
   const filteredProducts = useMemo(() => {
     return products
       .filter((product) => {
-        // Safe Category Resolution
-        const categoryName = 
-          typeof product.category === "object" ? product.category?.name : product.category;
+        // Safe Category Resolution & Case Normalization
+        const categoryName = (
+          typeof product.category === "object"
+            ? product.category?.name
+            : product.category || ""
+        )
+          .toString()
+          .toLowerCase()
+          .trim();
 
-        if (
-          filters.category && 
-          filters.category.length > 0 && 
-          (!categoryName || !filters.category.includes(categoryName))
-        ) {
-          return false;
+        if (filters.category && filters.category.length > 0) {
+          const matchesCategory = filters.category.some((cat) => {
+            const normalizedSelected = cat.toLowerCase().trim();
+            return (
+              categoryName === normalizedSelected ||
+              categoryName.includes(normalizedSelected) ||
+              normalizedSelected.includes(categoryName)
+            );
+          });
+          if (!matchesCategory) return false;
         }
 
-        // Safe Fit Tag Check
-        if (
-          filters.fit && 
-          filters.fit.length > 0 && 
-          (!product.fitTag || !filters.fit.includes(product.fitTag))
-        ) {
-          return false;
+        // Safe Fit Tag Check (Case-Insensitive)
+        const productFit = (product.fitTag || product.fit || "")
+          .toString()
+          .toLowerCase()
+          .trim();
+
+        if (filters.fit && filters.fit.length > 0) {
+          const matchesFit = filters.fit.some(
+            (f) => f.toLowerCase().trim() === productFit
+          );
+          if (!matchesFit) return false;
         }
 
-        // Safe Sizes Check
-        const sizesList = Array.isArray(product.availableSizes) 
-          ? product.availableSizes 
-          : Array.isArray(product.sizes) 
-          ? product.sizes 
-          : [];
+        // Safe Sizes Check (Case-Insensitive)
+        const sizesList = (
+          Array.isArray(product.availableSizes)
+            ? product.availableSizes
+            : Array.isArray(product.sizes)
+            ? product.sizes
+            : []
+        ).map((s) => s.toString().toUpperCase().trim());
 
-        if (
-          filters.size && 
-          filters.size.length > 0 && 
-          !filters.size.some((s) => sizesList.includes(s))
-        ) {
-          return false;
+        if (filters.size && filters.size.length > 0) {
+          const matchesSize = filters.size.some((s) =>
+            sizesList.includes(s.toUpperCase().trim())
+          );
+          if (!matchesSize) return false;
         }
 
         // Safe Numeric Price Parse Check
@@ -89,7 +104,7 @@ const ShopByCategory = () => {
         }
 
         // Stock Filter Check
-        if (filters.inStockOnly && product.isSoldOut) {
+        if (filters.inStockOnly && (product.isSoldOut || product.stock === 0)) {
           return false;
         }
 
@@ -101,19 +116,22 @@ const ShopByCategory = () => {
 
         if (filters.sortBy === "price_asc") return priceA - priceB;
         if (filters.sortBy === "price_desc") return priceB - priceA;
-        if (filters.sortBy === "alpha_asc") return (a.title || "").localeCompare(b.title || "");
-        if (filters.sortBy === "alpha_desc") return (b.title || "").localeCompare(b.title || "");
+        if (filters.sortBy === "alpha_asc")
+          return (a.title || "").localeCompare(b.title || "");
+        if (filters.sortBy === "alpha_desc")
+          return (b.title || "").localeCompare(a.title || ""); // Fixed: Changed b.title to a.title comparison
         return 0;
       });
   }, [products, filters]);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-6 md:py-8">
-      
       {/* Top Header */}
       <div className="flex justify-between items-center mb-4 md:mb-6 pb-4 border-b border-zinc-800">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wide">Shop By Category</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wide">
+            Shop By Category
+          </h1>
           <p className="text-xs text-zinc-400 mt-1">
             Showing {filteredProducts.length} of {products.length} products
           </p>
@@ -131,7 +149,6 @@ const ShopByCategory = () => {
 
       {/* Main Container */}
       <div className="flex flex-col lg:flex-row gap-8">
-        
         {/* DESKTOP SIDEBAR */}
         <div className="hidden lg:block">
           <FilterSidebar onFilterChange={handleFilterChange} />
@@ -141,16 +158,18 @@ const ShopByCategory = () => {
         {isMobileFilterOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             {/* Backdrop */}
-            <div 
+            <div
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileFilterOpen(false)}
             />
-            
+
             {/* Sliding Drawer */}
             <div className="relative w-full max-w-xs bg-[#121214] h-full overflow-y-auto p-5 z-10 shadow-2xl ml-auto border-l border-zinc-800">
               <div className="flex items-center justify-between pb-4 border-b border-zinc-800 mb-4">
-                <h2 className="text-sm font-bold text-white uppercase">Filters & Sort</h2>
-                <button 
+                <h2 className="text-sm font-bold text-white uppercase">
+                  Filters & Sort
+                </h2>
+                <button
                   onClick={() => setIsMobileFilterOpen(false)}
                   className="p-1 rounded-lg text-zinc-400 hover:text-white bg-zinc-800/60"
                 >
@@ -173,16 +192,17 @@ const ShopByCategory = () => {
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {filteredProducts.map((item) => (
-                <ProductCard key={item.id} product={item} />
+                <ProductCard key={item.id || item._id} product={item} />
               ))}
             </div>
           ) : (
             <div className="text-center py-16 border border-dashed border-zinc-800 rounded-xl">
-              <p className="text-zinc-400 text-sm">No products match your selected filters.</p>
+              <p className="text-zinc-400 text-sm">
+                No products match your selected filters.
+              </p>
             </div>
           )}
         </main>
-
       </div>
     </div>
   );

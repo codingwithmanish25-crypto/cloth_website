@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
-export default function AddProductPage() {
+export default function EditProductPage({ params }) {
+  const router = useRouter();
+  const resolvedParams = use(params);
+  const productId = resolvedParams.id;
+
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -18,30 +23,60 @@ export default function AddProductPage() {
     fitTag: "RELAXED FIT",
     description: "",
     isSoldOut: false,
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
     availableSizes: ["S", "M", "L", "XL"],
-    images: [],
+    images: [], // Existing + Preview URLs
   });
 
   const [categories, setCategories] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [newImageFiles, setNewImageFiles] = useState([]); // Nayi select ki hui files
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch Categories on Mount
+  // 1. Fetch Categories & Product Details on Mount
   useEffect(() => {
-    async function fetchCategories() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/categories");
+        // Fetch Categories
+        const catRes = await fetch("/api/categories");
+        const catData = await catRes.json();
+        if (Array.isArray(catData)) setCategories(catData);
+
+        // Fetch Current Product
+        const res = await fetch(`/api/products/${productId}`);
         const data = await res.json();
-        if (Array.isArray(data)) setCategories(data);
+
+        if (res.ok) {
+          const loadedPrice = Number(data.price) || 0;
+          const loadedOriginalPrice = Number(data.originalPrice) || 0;
+          const hasOriginalPrice = loadedOriginalPrice > 0;
+
+          setFormData({
+            title: data.title || "",
+            slug: data.slug || "",
+            categoryId: data.categoryId || "",
+            price: String(hasOriginalPrice ? Math.min(loadedPrice, loadedOriginalPrice) : loadedPrice),
+            originalPrice: hasOriginalPrice ? String(Math.max(loadedPrice, loadedOriginalPrice)) : "",
+            fitTag: data.fitTag || "RELAXED FIT",
+            description: data.description || "",
+            isSoldOut: data.isSoldOut || false,
+            availableSizes: Array.isArray(data.availableSizes) ? data.availableSizes : ["S", "M", "L", "XL"],
+            images: Array.isArray(data.images) ? data.images : data.imageUrl ? [data.imageUrl] : [],
+          });
+        } else {
+          alert("Product not found");
+          router.push("/admin/products");
+        }
       } catch (error) {
-        console.error("Failed to load categories:", error);
+        console.error("Error loading product data:", error);
+      } finally {
+        setLoading(false);
       }
     }
-    fetchCategories();
-  }, []);
 
-  // Auto Generate Slug on Title Change
+    if (productId) fetchData();
+  }, [productId, router]);
+
+  // Handle Title Change & Slug Sync
   const handleTitleChange = (e) => {
     const title = e.target.value;
     const generatedSlug = title
@@ -76,7 +111,7 @@ export default function AddProductPage() {
     if (!files.length) return;
 
     const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImageFiles((prev) => [...prev, ...files]);
+    setNewImageFiles((prev) => [...prev, ...files]);
     setFormData((prev) => ({
       ...prev,
       images: [...prev.images, ...newPreviews],
@@ -85,29 +120,39 @@ export default function AddProductPage() {
 
   // Remove Selected Image
   const handleRemoveImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setFormData((prev) => {
+      const targetUrl = prev.images[index];
+      // Agar wo naye local dynamic object URL wale images me se hai toh array update karein
+      if (targetUrl.startsWith("blob:")) {
+        const blobIndex = prev.images.filter((img) => img.startsWith("blob:")).indexOf(targetUrl);
+        if (blobIndex !== -1) {
+          setNewImageFiles((files) => files.filter((_, i) => i !== blobIndex));
+        }
+      }
+      return {
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index),
+      };
+    });
   };
 
   // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
 
     try {
-      if (imageFiles.length === 0) {
+      if (formData.images.length === 0) {
         alert("At least one product image is required.");
-        setLoading(false);
+        setSaving(false);
         return;
       }
 
-      const uploadedImageUrls = [];
+      // Existing Supabase URLs filter karein
+      const finalImageUrls = formData.images.filter((img) => !img.startsWith("blob:"));
 
-      // 1. Upload Images to Supabase Storage Bucket
-      for (const file of imageFiles) {
+      // Nayi dynamic images ko Supabase par upload karein
+      for (const file of newImageFiles) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `items/${fileName}`;
@@ -124,12 +169,12 @@ export default function AddProductPage() {
           .from("products")
           .getPublicUrl(filePath);
 
-        uploadedImageUrls.push(publicUrlData.publicUrl);
+        finalImageUrls.push(publicUrlData.publicUrl);
       }
 
-      // 2. Insert product via Next.js API Route `/api/products`
-      const response = await fetch("/api/products", {
-        method: "POST",
+      // API call to PUT route
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
@@ -141,40 +186,35 @@ export default function AddProductPage() {
           description: formData.description,
           isSoldOut: formData.isSoldOut,
           availableSizes: formData.availableSizes,
-          images: uploadedImageUrls,
+          images: finalImageUrls,
+          imageUrl: finalImageUrls[0] || null, // First image as main display image
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to add product");
+        throw new Error(result.error || "Failed to update product");
       }
 
-      alert("Product created successfully!");
-
-      // Reset Form State
-      setFormData({
-        title: "",
-        slug: "",
-        categoryId: "",
-        price: "",
-        originalPrice: "",
-        fitTag: "RELAXED FIT",
-        description: "",
-        isSoldOut: false,
-        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-        availableSizes: ["S", "M", "L", "XL"],
-        images: [],
-      });
-      setImageFiles([]);
+      alert("Product updated successfully!");
+      router.push("/admin/products");
+      router.refresh();
     } catch (error) {
-      console.error("Error adding product:", error);
-      alert(`Failed to add product: ${error.message}`);
+      console.error("Error updating product:", error);
+      alert(`Failed to update product: ${error.message}`);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -188,22 +228,23 @@ export default function AddProductPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h2 className="text-xl font-bold text-white">Add New Product</h2>
-            <p className="text-xs text-zinc-400">Fill in details matching your schema.</p>
+            <h2 className="text-xl font-bold text-white">Edit Product</h2>
+            <p className="text-xs text-zinc-400">Update details for this product.</p>
           </div>
         </div>
 
         <button
           type="submit"
-          form="add-product-form"
-          disabled={loading}
-          className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
+          form="edit-product-form"
+          disabled={saving}
+          className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
         >
-          {loading ? "Publishing..." : "Publish Product"}
+          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {saving ? "Saving Changes..." : "Save Changes"}
         </button>
       </div>
 
-      <form id="add-product-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <form id="edit-product-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column - Main Details */}
         <div className="md:col-span-2 space-y-5">
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-4">

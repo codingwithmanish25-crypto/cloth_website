@@ -17,7 +17,7 @@ const ProductCard = ({ product }) => {
     isSoldOut = false,
     image,
     images,
-    slug = "",
+    slug,
     id,
   } = product;
 
@@ -25,11 +25,13 @@ const ProductCard = ({ product }) => {
   const getDisplayImage = () => {
     if (imageError) return "/placeholder.jpg";
     if (typeof image === "string" && image.trim() !== "") return image;
+    
     if (Array.isArray(images) && images.length > 0) {
       const first = images[0];
       if (typeof first === "string" && first.trim() !== "") return first;
       if (typeof first === "object" && first?.url) return first.url;
     }
+    
     if (typeof images === "string" && images.trim() !== "") {
       try {
         const parsed = JSON.parse(images);
@@ -41,7 +43,7 @@ const ProductCard = ({ product }) => {
     return "/placeholder.jpg";
   };
 
-  // 2. Safe Sizes Normalizer (Handles Array, JSON String, Comma-separated String)
+  // 2. Safe Sizes Normalizer
   const parseSizes = (data) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -50,14 +52,12 @@ const ProductCard = ({ product }) => {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed)) return parsed;
       } catch (e) {
-        // Handle comma-separated string e.g. "S, M, L, XL"
         return data.split(",").map((s) => s.trim()).filter(Boolean);
       }
     }
     return [];
   };
 
-  // Get Sizes from all possible DB keys
   const allPossibleSizes = [
     ...parseSizes(product.sizes),
     ...parseSizes(product.size),
@@ -65,23 +65,29 @@ const ProductCard = ({ product }) => {
     ...parseSizes(product.variants?.map((v) => v.size)),
   ];
 
-  // Remove duplicates
   const displaySizes = Array.from(new Set(allPossibleSizes));
 
-  // Handle Available vs Stock Sizes
   const availableList = parseSizes(product.availableSizes);
   const isSizeAvailable = (sz) => {
     if (availableList.length > 0) return availableList.includes(sz);
-    return true; // Default to available if specific availability list isn't provided
+    return true;
   };
 
   const displayImage = getDisplayImage();
-  const productLink = slug ? `/product/${slug}` : id ? `/product/${id}` : "#";
-  const displayMRP = originalPrice || mrp;
+
+  // FIX: Properly encode URL and prioritize valid Slug over ID
+  const cleanSlug = slug ? encodeURIComponent(String(slug).trim()) : null;
+  const cleanId = id ? encodeURIComponent(String(id).trim()) : null;
+  const productLink = cleanSlug ? `/product/${cleanSlug}` : cleanId ? `/product/${cleanId}` : "#";
+
+  const enteredPrice = Number(price) || 0;
+  const enteredMRP = Number(originalPrice || mrp) || 0;
+  const displayPrice = enteredMRP > 0 ? Math.min(enteredPrice, enteredMRP) : enteredPrice;
+  const displayMRP = enteredMRP > 0 ? Math.max(enteredPrice, enteredMRP) : 0;
 
   return (
     <div className="group relative w-full flex flex-col bg-transparent text-white overflow-hidden">
-      {/* Dynamic Link & Image */}
+      {/* Product Image & Link */}
       <Link href={productLink} className="relative w-full aspect-[3/4] bg-zinc-900 overflow-hidden block">
         {displayImage ? (
           <Image
@@ -125,19 +131,19 @@ const ProductCard = ({ product }) => {
           </h3>
         </Link>
 
-        {/* Price Section */}
+        {/* Price */}
         <div className="flex items-center space-x-2 text-xs sm:text-sm">
           <span className="font-bold text-white">
-            ₹ {Number(price).toLocaleString("en-IN")}.00
+            ₹ {displayPrice.toLocaleString("en-IN")}.00
           </span>
-          {displayMRP && Number(displayMRP) > Number(price) && (
+          {displayMRP > displayPrice && (
             <span className="text-zinc-500 line-through text-[11px] sm:text-xs">
-              ₹ {Number(displayMRP).toLocaleString("en-IN")}.00
+              ₹ {displayMRP.toLocaleString("en-IN")}.00
             </span>
           )}
         </div>
 
-        {/* Sizes Display Section */}
+        {/* Sizes Display */}
         {displaySizes.length > 0 ? (
           <div className="flex items-center space-x-2 pt-1.5 text-[10px] sm:text-xs tracking-wider">
             {displaySizes.map((sz) => {
@@ -157,7 +163,6 @@ const ProductCard = ({ product }) => {
             })}
           </div>
         ) : (
-          /* Fallback size display if admin provides standard sizing */
           <div className="flex items-center space-x-2 pt-1.5 text-[10px] sm:text-xs tracking-wider text-zinc-400 font-medium">
             <span>S</span>
             <span>M</span>

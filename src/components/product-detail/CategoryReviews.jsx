@@ -46,7 +46,13 @@ const CategoryReviews = () => {
               key={story.id} 
               className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-orange-500 p-0.5 overflow-hidden flex-shrink-0"
             >
-              <Image src={story.img} alt="User story" fill className="rounded-full object-cover" />
+              <Image
+                src={story.img}
+                alt="User story"
+                fill
+                sizes="48px"
+                className="rounded-full object-cover"
+              />
             </div>
           ))}
         </div>

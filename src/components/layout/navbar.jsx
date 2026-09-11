@@ -19,7 +19,12 @@ const Navbar = () => {
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const timeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Total dynamic item quantity calculate karein
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -39,7 +44,7 @@ const Navbar = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     
-    if (isMobileOpen || isCartOpen) {
+    if (isMobileOpen || isCartOpen || isSearchOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -49,7 +54,78 @@ const Navbar = () => {
       window.removeEventListener("resize", handleResize);
       document.body.style.overflow = "unset";
     };
-  }, [isMobileOpen, isCartOpen]);
+  }, [isMobileOpen, isCartOpen, isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return undefined;
+
+    searchInputRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsSearchOpen(false);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return undefined;
+
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`/api/products?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (response.ok && Array.isArray(data)) setSearchResults(data);
+        else setSearchResults([]);
+      } catch (error) {
+        if (error.name !== "AbortError") setSearchResults([]);
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [isSearchOpen, searchQuery]);
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    setIsMobileOpen(false);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  const getSearchImage = (product) => {
+    if (Array.isArray(product.images) && product.images[0]) return product.images[0];
+    return "/placeholder.jpg";
+  };
+
+  const getSearchPrice = (product) => {
+    const price = Number(product.price) || 0;
+    const originalPrice = Number(product.originalPrice) || 0;
+    return {
+      sale: originalPrice > 0 ? Math.min(price, originalPrice) : price,
+      original: originalPrice > 0 ? Math.max(price, originalPrice) : 0,
+    };
+  };
 
   const shopCategory = [
     {
@@ -288,7 +364,8 @@ const Navbar = () => {
 
           {/* RIGHT SECTION */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 md:gap-3 lg:gap-5 xl:gap-6 flex-1 h-full text-white">
-            <button 
+            <button
+              onClick={openSearch}
               className="p-1 hover:text-[#10b981] transition-colors focus:outline-none cursor-pointer" 
               aria-label="Search"
             >
@@ -314,6 +391,108 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
+
+      {/* SEARCH OVERLAY */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close search"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 cursor-default"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeSearch}
+            />
+            <motion.section
+              className="fixed top-14 sm:top-16 md:top-20 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-2xl bg-white text-zinc-900 rounded-b-xl shadow-2xl z-50 overflow-hidden"
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.2 }}
+              role="dialog"
+              aria-label="Search products"
+            >
+              <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3">
+                <Search className="w-5 h-5 text-zinc-500 shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search products"
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                  type="search"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={closeSearch}
+                  className="p-1 text-zinc-500 hover:text-zinc-900"
+                  aria-label="Close search"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {searchQuery.trim() ? (
+                <div className="max-h-[65vh] overflow-y-auto p-3">
+                  <div className="flex items-center justify-between px-1 pb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                    <span>{isSearching ? "Searching" : "Products"}</span>
+                    {!isSearching && searchResults.length > 0 && <span>{searchResults.length} results</span>}
+                  </div>
+                  {isSearching ? (
+                    <p className="px-1 py-8 text-center text-sm text-zinc-500">Searching products...</p>
+                  ) : searchResults.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {searchResults.map((product) => {
+                        const prices = getSearchPrice(product);
+                        return (
+                          <Link
+                            key={String(product.id)}
+                            href={`/product/${encodeURIComponent(product.slug)}`}
+                            onClick={closeSearch}
+                            className="group min-w-0"
+                          >
+                            <div className="relative aspect-[3/4] overflow-hidden bg-zinc-100">
+                              <Image
+                                src={getSearchImage(product)}
+                                alt={product.title}
+                                fill
+                                sizes="(max-width: 640px) 42vw, 140px"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                unoptimized={getSearchImage(product).startsWith("http")}
+                              />
+                              {product.isSoldOut && (
+                                <span className="absolute left-1 top-1 bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white">
+                                  SOLD OUT
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="mt-2 truncate text-[11px] font-semibold uppercase">{product.title}</h3>
+                            <div className="flex items-center gap-1 text-[10px]">
+                              <span className="font-bold">₹{prices.sale.toLocaleString("en-IN")}</span>
+                              {prices.original > prices.sale && (
+                                <span className="text-zinc-400 line-through">₹{prices.original.toLocaleString("en-IN")}</span>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="px-1 py-8 text-center text-sm text-zinc-500">No products found.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="px-4 py-8 text-center text-sm text-zinc-500">
+                  Search by product name, fit, or description
+                </div>
+              )}
+            </motion.section>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* MOBILE OVERLAY SIDEBAR DRAWER */}
       <AnimatePresence>

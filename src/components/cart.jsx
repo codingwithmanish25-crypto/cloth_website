@@ -1,38 +1,54 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, Trash2, Plus, Minus, Tag, ChevronRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 const Cart = () => {
-  const { isCartOpen, closeCart, cartItems, updateQuantity, removeFromCart } = useCart();
-
-  if (!isCartOpen) return null;
-
-  const completeYourLook = [
-    {
-      id: 101,
-      title: "Red Printed Tee",
-      price: 1599,
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    },
-    {
-      id: 102,
-      title: "Wild Print Tee",
-      price: 1599,
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    },
-    {
-      id: 103,
-      title: "Ankle Socks Pack",
-      price: 349,
-      originalPrice: 599,
-      image: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    },
-  ];
+  const {
+    isCartOpen,
+    closeCart,
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    appliedCoupon,
+    couponError,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
+  const [isCouponOpen, setIsCouponOpen] = useState(false);
+  const [coupons, setCoupons] = useState([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const discount = appliedCoupon
+    ? appliedCoupon.discountType === "PERCENTAGE"
+      ? Math.min(subtotal, (subtotal * appliedCoupon.discountValue) / 100)
+      : Math.min(subtotal, appliedCoupon.discountValue)
+    : 0;
+  const total = Math.max(0, subtotal - discount);
+
+  useEffect(() => {
+    if (!isCouponOpen) return;
+    fetch("/api/coupons")
+      .then((response) => response.json())
+      .then((data) => setCoupons(Array.isArray(data) ? data : []))
+      .catch(() => setCoupons([]));
+  }, [isCouponOpen]);
+
+  const handleApplyCoupon = async (code) => {
+    setCouponBusy(true);
+    const result = await applyCoupon(code, subtotal);
+    setCouponBusy(false);
+    if (result) {
+      setCouponCode("");
+      setIsCouponOpen(false);
+    }
+  };
+
+  if (!isCartOpen) return null;
 
   const getOfferProgress = () => {
     if (totalItems >= 5) return 100;
@@ -99,7 +115,14 @@ const Cart = () => {
               cartItems.map((item) => (
                 <div key={item.cartItemId || item.id} className="flex gap-3 pb-4 border-b border-zinc-800">
                   <div className="relative w-20 h-24 bg-zinc-900 rounded overflow-hidden shrink-0">
-                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    <Image
+                      src={item.image || item.images?.[0] || "/placeholder.jpg"}
+                      alt={item.title}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                      unoptimized={(item.image || item.images?.[0] || "").startsWith("http")}
+                    />
                   </div>
 
                   <div className="flex-1 flex flex-col justify-between">
@@ -138,7 +161,7 @@ const Cart = () => {
                       </div>
 
                       <span className="text-sm font-bold text-white">
-                        ₹ {(item.price * item.quantity).toLocaleString("en-IN")}.00
+                        ₹ {(Number(item.price) * item.quantity).toLocaleString("en-IN")}.00
                       </span>
                     </div>
                   </div>
@@ -153,39 +176,26 @@ const Cart = () => {
 
           {/* Coupons Bar */}
           <div className="px-4">
-            <button className="w-full flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg hover:border-zinc-700 transition text-xs font-medium text-zinc-200">
+            <button
+              onClick={() => setIsCouponOpen(true)}
+              className="w-full flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg hover:border-zinc-700 transition text-xs font-medium text-zinc-200"
+            >
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-orange-500" />
-                <span>Apply Coupons</span>
+                <span>{appliedCoupon ? `${appliedCoupon.code} applied` : "Apply Coupons"}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-zinc-500" />
             </button>
+            {appliedCoupon && (
+              <button
+                onClick={removeCoupon}
+                className="mt-2 text-[11px] text-red-400 hover:text-red-300"
+              >
+                Remove coupon
+              </button>
+            )}
           </div>
 
-          {/* Cross Sell Section */}
-          <div className="px-4 pb-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">
-              Complete Your Look
-            </h4>
-            <div className="grid grid-cols-3 gap-2">
-              {completeYourLook.map((prod) => (
-                <div key={prod.id} className="border border-zinc-800 rounded p-1.5 bg-zinc-900">
-                  <div className="relative w-full aspect-[3/4] bg-zinc-800 rounded overflow-hidden">
-                    <Image src={prod.image} alt={prod.title} fill className="object-cover" />
-                    <button className="absolute top-1 right-1 bg-orange-600 hover:bg-orange-500 text-white p-1 rounded-full shadow">
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="mt-1.5 text-[10px]">
-                    <p className="font-medium text-zinc-300 truncate">{prod.title}</p>
-                    <div className="flex items-center gap-1 mt-0.5 font-bold text-white">
-                      <span>₹ {prod.price}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
@@ -196,12 +206,70 @@ const Cart = () => {
               ₹ {subtotal.toLocaleString("en-IN")}.00
             </span>
           </div>
+          {discount > 0 && (
+            <div className="flex items-center justify-between mb-3 text-xs text-emerald-400">
+              <span>Discount ({appliedCoupon.code})</span>
+              <span>- ₹ {discount.toLocaleString("en-IN")}.00</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between mb-3 text-sm font-bold">
+            <span>Total</span>
+            <span>₹ {total.toLocaleString("en-IN")}.00</span>
+          </div>
           <button className="w-full bg-orange-600 hover:bg-orange-500 text-black font-bold py-3.5 rounded uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition">
             <span>Proceed to Buy</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </aside>
+
+      {isCouponOpen && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 p-5 text-white shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider">Apply Coupon</h3>
+              <button onClick={() => setIsCouponOpen(false)} className="text-zinc-400 hover:text-white">×</button>
+            </div>
+            <div className="mb-4 flex gap-2">
+              <input
+                value={couponCode}
+                onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                placeholder="Enter coupon code"
+                className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs outline-none focus:border-orange-500"
+              />
+              <button
+                disabled={!couponCode.trim() || couponBusy}
+                onClick={() => handleApplyCoupon(couponCode)}
+                className="rounded bg-orange-600 px-4 py-2 text-xs font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Apply
+              </button>
+            </div>
+            {couponError && <p className="mb-3 text-xs text-red-400">{couponError}</p>}
+            <div className="space-y-2">
+              {coupons.length > 0 ? coupons.map((coupon) => (
+                <div key={coupon.id} className="flex items-center justify-between rounded border border-zinc-800 bg-zinc-900 p-3">
+                  <div>
+                    <p className="text-xs font-bold text-orange-400">{coupon.code}</p>
+                    <p className="mt-1 text-[10px] text-zinc-400">
+                      {coupon.discountType === "PERCENTAGE" ? `${coupon.discountValue}% OFF` : `₹${coupon.discountValue} OFF`}
+                      {coupon.minOrderValue > 0 && ` on orders above ₹${coupon.minOrderValue}`}
+                    </p>
+                    <p className="mt-1 text-[10px] text-zinc-500">Valid till {new Date(coupon.expiresAt).toLocaleString("en-IN")}</p>
+                  </div>
+                  <button
+                    disabled={couponBusy}
+                    onClick={() => handleApplyCoupon(coupon.code)}
+                    className="rounded border border-orange-500 px-3 py-1.5 text-[10px] font-bold text-orange-400 hover:bg-orange-500 hover:text-black disabled:opacity-50"
+                  >
+                    Apply
+                  </button>
+                </div>
+              )) : <p className="py-5 text-center text-xs text-zinc-500">No active coupons right now.</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

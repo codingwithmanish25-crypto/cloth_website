@@ -249,6 +249,7 @@ const FilterSidebar = ({ onFilterChange }) => {
               return (
                 <button
                   key={size}
+                  type="button"
                   onClick={() =>
                     handleCheckboxChange(size, selectedSize, setSelectedSize)
                   }

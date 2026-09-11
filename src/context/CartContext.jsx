@@ -7,20 +7,9 @@ const CartContext = createContext(undefined);
 export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   
-  // Initial state me cartItemId properly format kar diya gaya hai
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      cartItemId: "1-XXL",
-      title: "Sunflower Beige Shirt",
-      color: "Beige",
-      size: "XXL",
-      price: 4398,
-      quantity: 2,
-      image:
-        "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp",
-    },
-  ]);
+  const [cartItems, setCartItems] = useState([]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
 
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
@@ -29,6 +18,10 @@ export const CartProvider = ({ children }) => {
     // Standardize unique ID per product variant (ID + Size)
     const size = selectedSize || product.size || "Free Size";
     const key = `${product.id}-${size}`;
+    const price = Number(product.price) || 0;
+    const originalPrice = Number(product.originalPrice) || 0;
+    const salePrice = originalPrice > 0 ? Math.min(price, originalPrice) : price;
+    const image = product.image || (Array.isArray(product.images) ? product.images[0] : null);
 
     setCartItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex(
@@ -38,7 +31,7 @@ export const CartProvider = ({ children }) => {
       if (existingItemIndex > -1) {
         return prevItems.map((item, index) =>
           index === existingItemIndex
-            ? { ...item, quantity: item.quantity + 1 }
+              ? { ...item, price: salePrice, image, quantity: item.quantity + 1 }
             : item
         );
       }
@@ -47,6 +40,8 @@ export const CartProvider = ({ children }) => {
         ...prevItems,
         {
           ...product,
+          price: salePrice,
+          image,
           cartItemId: key,
           size: size,
           quantity: 1,
@@ -79,6 +74,30 @@ export const CartProvider = ({ children }) => {
     );
   };
 
+  const applyCoupon = async (code, subtotal) => {
+    setCouponError("");
+    try {
+      const response = await fetch("/api/coupons/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Coupon could not be applied");
+      setAppliedCoupon(result);
+      return result;
+    } catch (error) {
+      setAppliedCoupon(null);
+      setCouponError(error.message);
+      return null;
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -89,6 +108,10 @@ export const CartProvider = ({ children }) => {
         addToCart,
         updateQuantity,
         removeFromCart,
+        appliedCoupon,
+        couponError,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

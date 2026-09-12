@@ -151,6 +151,7 @@ export async function PUT(req, { params }) {
         originalPrice,
         fitTag: body.fitTag,
         description: body.description,
+        collectionSlugs: Array.isArray(body.collectionSlugs) ? body.collectionSlugs : [],
         isSoldOut: Boolean(body.isSoldOut),
         availableSizes: body.availableSizes || [],
         images: body.images || [],
@@ -161,5 +162,33 @@ export async function PUT(req, { params }) {
   } catch (error) {
     console.error("PUT Product Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 4. DELETE /api/products/[id] -> Delete Product
+export async function DELETE(req, { params }) {
+  try {
+    const resolvedParams = await params;
+    const targetId = parseId(resolvedParams?.id);
+
+    if (targetId === null || typeof targetId !== "bigint") {
+      return NextResponse.json({ error: "Valid product ID is required" }, { status: 400 });
+    }
+
+    const deletedProduct = await prisma.product.delete({
+      where: { id: targetId },
+    });
+
+    return NextResponse.json(
+      { message: "Product deleted successfully", id: deletedProduct.id.toString() },
+      { status: 200 }
+    );
+  } catch (error) {
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    console.error("DELETE Product Error:", error);
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }

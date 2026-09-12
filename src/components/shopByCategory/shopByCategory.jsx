@@ -2,15 +2,32 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ProductCard from "@/components/productcard";
 import FilterSidebar from "./FilterSidebar";
-import { SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 
-const ShopByCategory = () => {
+const ProductSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="aspect-[3/4] w-full bg-zinc-800" />
+    <div className="mt-3 h-3 w-4/5 bg-zinc-800" />
+    <div className="mt-2 h-3 w-2/5 bg-zinc-800" />
+    <div className="mt-2 h-2 w-3/5 bg-zinc-800" />
+  </div>
+);
+
+const ProductSkeletonGrid = () => (
+  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 md:gap-6">
+    {Array.from({ length: 8 }, (_, index) => (
+      <ProductSkeleton key={index} />
+    ))}
+  </div>
+);
+
+const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [filters, setFilters] = useState({
     sortBy: "recommended",
-    category: [],
+    category: initialCategory ? [initialCategory] : [],
     fit: [],
     size: [],
     maxPrice: 50000,
@@ -46,26 +63,31 @@ const ShopByCategory = () => {
   const filteredProducts = useMemo(() => {
     return products
       .filter((product) => {
+        if (!product) return false;
+
         // Safe Category Resolution & Case Normalization
-        const categoryName = (
+        const categorySlug = String(
           typeof product.category === "object"
-            ? product.category?.name
+            ? product.category?.slug || ""
             : product.category || ""
         )
-          .toString()
           .toLowerCase()
           .trim();
 
         if (filters.category && filters.category.length > 0) {
           const matchesCategory = filters.category.some((cat) => {
-            const normalizedSelected = cat.toLowerCase().trim();
-            return (
-              categoryName === normalizedSelected ||
-              categoryName.includes(normalizedSelected) ||
-              normalizedSelected.includes(categoryName)
-            );
+            const normalizedSelected = String(cat || "").toLowerCase().trim();
+            return categorySlug === normalizedSelected;
           });
           if (!matchesCategory) return false;
+        }
+
+        if (
+          initialCollection &&
+          (!Array.isArray(product.collectionSlugs) ||
+            !product.collectionSlugs.includes(initialCollection))
+        ) {
+          return false;
         }
 
         // Safe Fit Tag Check (Case-Insensitive)
@@ -122,7 +144,7 @@ const ShopByCategory = () => {
           return (b.title || "").localeCompare(a.title || ""); // Fixed: Changed b.title to a.title comparison
         return 0;
       });
-  }, [products, filters]);
+  }, [products, filters, initialCollection]);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-6 md:py-8">
@@ -130,7 +152,7 @@ const ShopByCategory = () => {
       <div className="flex justify-between items-center mb-4 md:mb-6 pb-4 border-b border-zinc-800">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wide">
-            Shop By Category
+            {initialCollection ? "Shop By Collection" : "Shop By Category"}
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
             Showing {filteredProducts.length} of {products.length} products
@@ -151,7 +173,10 @@ const ShopByCategory = () => {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* DESKTOP SIDEBAR */}
         <div className="hidden lg:block">
-          <FilterSidebar onFilterChange={handleFilterChange} />
+          <FilterSidebar
+            onFilterChange={handleFilterChange}
+            initialCategory={initialCategory}
+          />
         </div>
 
         {/* MOBILE DRAWER SIDEBAR */}
@@ -177,7 +202,10 @@ const ShopByCategory = () => {
                 </button>
               </div>
 
-              <FilterSidebar onFilterChange={handleFilterChange} />
+              <FilterSidebar
+                onFilterChange={handleFilterChange}
+                initialCategory={initialCategory}
+              />
             </div>
           </div>
         )}
@@ -185,14 +213,15 @@ const ShopByCategory = () => {
         {/* MAIN PRODUCT GRID SECTION */}
         <main className="flex-1">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-zinc-400 gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
-              <span>Fetching latest catalog...</span>
-            </div>
+            <ProductSkeletonGrid />
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-              {filteredProducts.map((item) => (
-                <ProductCard key={item.id || item._id} product={item} />
+              {filteredProducts.map((item, index) => (
+                <ProductCard
+                  key={item.id || item._id}
+                  product={item}
+                  priority={index === 0}
+                />
               ))}
             </div>
           ) : (

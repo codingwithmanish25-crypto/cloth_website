@@ -1,88 +1,148 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import ProductCard from '@/components/productcard'; 
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import ProductCard from "@/components/productcard";
+
+const PAGE_SIZE = 5;
+
+const ProductSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="aspect-[3/4] w-full bg-zinc-800" />
+    <div className="mt-3 h-3 w-4/5 bg-zinc-800" />
+    <div className="mt-2 h-3 w-2/5 bg-zinc-800" />
+    <div className="mt-2 h-2 w-3/5 bg-zinc-800" />
+  </div>
+);
+
+const ProductSkeletonGrid = ({ count = PAGE_SIZE }) => (
+  <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
+    {Array.from({ length: count }, (_, index) => (
+      <ProductSkeleton key={index} />
+    ))}
+  </div>
+);
 
 const Sectionthird = () => {
-  const [activeCategory, setActiveCategory] = useState(1);
+  const [fitTags, setFitTags] = useState([]);
+  const [activeFit, setActiveFit] = useState("");
+  const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const productsData = [
-    {
-      id: 1,
-      title: 'THE GLORY ARC RELAXED FIT T-SHIRT',
-      price: 1599,
-      fitTag: 'RELAXED FIT',
-      isSoldOut: false,
-      sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-      availableSizes: ['XS', 'S'],
-      image: '/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp',
-      slug: 'the-glory-arc-relaxed-fit',
-    },
-    {
-      id: 2,
-      title: 'SKY WALKER NAVY OVERSIZED T-SHIRT',
-      price: 1599,
-      originalPrice: 1999,
-      fitTag: 'OVERSIZED FIT',
-      isSoldOut: true,
-      sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-      availableSizes: [],
-      image: '/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp',
-      slug: 'sky-walker-navy-oversized',
-    },
-    {
-      id: 3,
-      title: 'SKY WALKER NAVY OVERSIZED T-SHIRT',
-      price: 1599,
-      originalPrice: 1999,
-      fitTag: 'OVERSIZED FIT',
-      isSoldOut: false,
-      sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-      availableSizes: ['L', 'XL', 'XXL'],
-      image: '/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp',
-      slug: 'sky-walker-navy-oversized',
-    },
-  ];
+  useEffect(() => {
+    const loadFitTags = async () => {
+      try {
+        const response = await fetch("/api/products?fitTags=true");
+        const data = await response.json();
+        if (response.ok) {
+          setFitTags(data);
+          setActiveFit(data[0] || "");
+        }
+      } catch (error) {
+        console.error("Failed to load homepage filters:", error);
+      }
+    };
 
-  const category = [
-    { id: 1, title: 'RELAXED FIT', href: '/collections/relaxed-fit-t-shirts' },
-    { id: 2, title: 'OVERSIZED FIT', href: '/collections/relaxed-fit-t-shirts' },
-    { id: 3, title: 'BOTTOMS', href: '/collections/joggers' },
-    { id: 4, title: 'JACKETS', href: '/collections/winter-arrivals' },
-    { id: 5, title: 'HOODIES', href: '/collections/hoodies' },
-    { id: 6, title: 'POLO', href: '/collections/polo-shirts' },
-    { id: 7, title: 'SHIRTS', href: '/collections/shirts' },
-    { id: 8, title: 'SHORTS', href: '/collections/shorts' },
-  ];
+    loadFitTags();
+  }, []);
+
+  useEffect(() => {
+    if (!fitTags.length && activeFit !== "") return;
+
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ page: "1", limit: String(PAGE_SIZE) });
+        if (activeFit) params.set("fitTag", activeFit);
+        const response = await fetch(`/api/products?${params}`);
+        const data = await response.json();
+        if (response.ok) {
+          setProducts(data.products || []);
+          setPage(1);
+          setHasMore(Boolean(data.hasMore));
+        }
+      } catch (error) {
+        console.error("Failed to load homepage products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [activeFit, fitTags.length]);
+
+  const loadMore = async () => {
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams({ page: String(nextPage), limit: String(PAGE_SIZE) });
+      if (activeFit) params.set("fitTag", activeFit);
+      const response = await fetch(`/api/products?${params}`);
+      const data = await response.json();
+      if (response.ok) {
+        setProducts((current) => [...current, ...(data.products || [])]);
+        setPage(nextPage);
+        setHasMore(Boolean(data.hasMore));
+      }
+    } catch (error) {
+      console.error("Failed to load more homepage products:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 ">
-      {/* Category Tabs */}
+    <section className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center gap-3 overflow-x-auto pb-6 border-b border-zinc-800 mb-8">
-        {category.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            onClick={() => setActiveCategory(item.id)}
-            className={`whitespace-nowrap px-4 py-2 text-xs font-bold tracking-widest uppercase  border transition-all duration-200 ${
-              activeCategory === item.id
-                ? 'bg-white text-black border-white'
-                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-[#25ef0e]'
+        {fitTags.map((fitTag) => (
+          <button
+            key={fitTag}
+            type="button"
+            onClick={() => setActiveFit(fitTag)}
+            className={`whitespace-nowrap border px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all duration-200 ${
+              activeFit === fitTag
+                ? "border-white bg-white text-black"
+                : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400"
             }`}
           >
-            {item.title}
-          </Link>
+            {fitTag}
+          </button>
         ))}
       </div>
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-        {productsData.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-    </div>
+      {loading ? (
+        <ProductSkeletonGrid />
+      ) : products.length ? (
+        <>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((product, index) => (
+              <ProductCard
+                key={String(product.id)}
+                product={product}
+                priority={index === 0}
+              />
+            ))}
+          </div>
+          {hasMore && (
+            <div className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="border border-zinc-700 px-6 py-3 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-50"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          )}
+          {loadingMore && <div className="mt-8"><ProductSkeletonGrid /></div>}
+        </>
+      ) : (
+        <p className="py-16 text-center text-sm text-zinc-500">No products found.</p>
+      )}
+    </section>
   );
 };
 

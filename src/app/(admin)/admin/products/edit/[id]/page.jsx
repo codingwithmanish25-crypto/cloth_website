@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { WEBSITE_COLLECTIONS } from "@/lib/websiteCollections";
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
@@ -18,6 +19,7 @@ export default function EditProductPage({ params }) {
     title: "",
     slug: "",
     categoryId: "",
+    collectionSlugs: [],
     price: "",
     originalPrice: "",
     fitTag: "RELAXED FIT",
@@ -54,6 +56,7 @@ export default function EditProductPage({ params }) {
             title: data.title || "",
             slug: data.slug || "",
             categoryId: data.categoryId || "",
+            collectionSlugs: Array.isArray(data.collectionSlugs) ? data.collectionSlugs : [],
             price: String(hasOriginalPrice ? Math.min(loadedPrice, loadedOriginalPrice) : loadedPrice),
             originalPrice: hasOriginalPrice ? String(Math.max(loadedPrice, loadedOriginalPrice)) : "",
             fitTag: data.fitTag || "RELAXED FIT",
@@ -180,6 +183,7 @@ export default function EditProductPage({ params }) {
           title: formData.title,
           slug: formData.slug,
           categoryId: formData.categoryId || null,
+          collectionSlugs: formData.collectionSlugs,
           price: Number(formData.price),
           originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
           fitTag: formData.fitTag,
@@ -230,6 +234,35 @@ export default function EditProductPage({ params }) {
           <div>
             <h2 className="text-xl font-bold text-white">Edit Product</h2>
             <p className="text-xs text-zinc-400">Update details for this product.</p>
+          </div>
+
+          <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-3">
+            <label className="block text-xs font-semibold text-zinc-300 uppercase">
+              Collections
+            </label>
+            <div className="grid grid-cols-1 gap-2">
+              {WEBSITE_COLLECTIONS.map(([name, slug]) => {
+                const selected = formData.collectionSlugs.includes(slug);
+                return (
+                  <label key={slug} className="flex items-center gap-3 text-xs text-zinc-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          collectionSlugs: selected
+                            ? prev.collectionSlugs.filter((item) => item !== slug)
+                            : [...prev.collectionSlugs, slug],
+                        }))
+                      }
+                      className="w-4 h-4 accent-emerald-500"
+                    />
+                    {name}
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -355,7 +388,7 @@ export default function EditProductPage({ params }) {
               <option value="">Select Category (Optional)</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {cat.group} / {cat.name}
                 </option>
               ))}
             </select>

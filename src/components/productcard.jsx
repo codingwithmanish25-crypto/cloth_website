@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const ProductCard = ({ product }) => {
+const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+const ProductCard = ({ product, priority = false }) => {
   const [imageError, setImageError] = useState(false);
 
   if (!product) return null;
@@ -58,15 +60,6 @@ const ProductCard = ({ product }) => {
     return [];
   };
 
-  const allPossibleSizes = [
-    ...parseSizes(product.sizes),
-    ...parseSizes(product.size),
-    ...parseSizes(product.availableSizes),
-    ...parseSizes(product.variants?.map((v) => v.size)),
-  ];
-
-  const displaySizes = Array.from(new Set(allPossibleSizes));
-
   const availableList = parseSizes(product.availableSizes);
   const isSizeAvailable = (sz) => {
     if (availableList.length > 0) return availableList.includes(sz);
@@ -98,6 +91,7 @@ const ProductCard = ({ product }) => {
             className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
             onError={() => setImageError(true)}
             unoptimized={displayImage.startsWith("http")}
+            priority={priority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">
@@ -144,32 +138,23 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Sizes Display */}
-        {displaySizes.length > 0 ? (
-          <div className="flex items-center space-x-2 pt-1.5 text-[10px] sm:text-xs tracking-wider">
-            {displaySizes.map((sz) => {
-              const available = isSizeAvailable(sz);
-              return (
-                <span
-                  key={sz}
-                  className={`font-semibold ${
-                    available
-                      ? "text-zinc-300"
-                      : "text-zinc-600 line-through decoration-zinc-600"
-                  }`}
-                >
-                  {sz}
-                </span>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex items-center space-x-2 pt-1.5 text-[10px] sm:text-xs tracking-wider text-zinc-400 font-medium">
-            <span>S</span>
-            <span>M</span>
-            <span>L</span>
-            <span>XL</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-2 pt-1.5 text-[10px] sm:text-xs tracking-wider">
+          {ALL_SIZES.map((sz) => {
+            const available = isSizeAvailable(sz);
+            return (
+              <span
+                key={sz}
+                className={`font-semibold ${
+                  available
+                    ? "text-zinc-300"
+                    : "text-zinc-600 line-through decoration-zinc-600"
+                }`}
+              >
+                {sz}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

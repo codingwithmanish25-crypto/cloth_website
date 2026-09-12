@@ -1,14 +1,24 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, RotateCcw, Check, ArrowUpDown } from "lucide-react";
+import { WEBSITE_CATEGORY_ROWS } from "@/lib/websiteCategories";
 
-const FilterSidebar = ({ onFilterChange }) => {
-  const [selectedCategory, setSelectedCategory] = useState([]);
+const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
+  const categories = WEBSITE_CATEGORY_ROWS;
+  const categoryGroups = [...new Set(categories.map((category) => category.group))];
+  const [selectedCategory, setSelectedCategory] = useState(
+    initialCategory ? [initialCategory] : []
+  );
   const [selectedFit, setSelectedFit] = useState([]);
   const [selectedSize, setSelectedSize] = useState([]);
   const [priceRange, setPriceRange] = useState(50000);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("recommended");
+  const [openCategoryGroup, setOpenCategoryGroup] = useState(
+    initialCategory
+      ? categories.find((category) => category.slug === initialCategory)?.group || "MEN"
+      : "MEN"
+  );
 
   const [openSections, setOpenSections] = useState({
     sort: true,
@@ -52,8 +62,7 @@ const FilterSidebar = ({ onFilterChange }) => {
     }
   }, [sortBy, selectedCategory, selectedFit, selectedSize, priceRange, inStockOnly]);
 
-  const categories = ["T-Shirt", "Bottomwear", "Winter Wear", "Polo", "Shirts"];
-  const fits = ["Relaxed Fit", "Oversized Fit", "Sleeveless", "Baggy Fit"];
+  const fits = ["RELAXED FIT", "OVERSIZED FIT", "REGULAR FIT", "SLIM FIT"];
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
   const sortOptions = [
@@ -192,37 +201,60 @@ const FilterSidebar = ({ onFilterChange }) => {
           )}
         </button>
         {openSections.category && (
-          <div className="mt-3 space-y-2.5">
-            {categories.map((cat) => {
-              const checked = selectedCategory.includes(cat);
+          <div className="mt-3 space-y-2">
+            {categoryGroups.map((group) => {
+              const groupCategories = categories.filter((category) => category.group === group);
+              const selectedCount = groupCategories.filter((category) =>
+                selectedCategory.includes(category.slug)
+              ).length;
+              const isOpen = openCategoryGroup === group;
+
               return (
-                <label
-                  key={cat}
-                  className="flex items-center gap-3 text-xs text-zinc-300 cursor-pointer hover:text-white transition-colors group"
-                >
-                  <div
-                    className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                      checked
-                        ? "bg-emerald-500 border-emerald-500 text-black"
-                        : "border-zinc-600 bg-zinc-900 group-hover:border-zinc-400"
+                <div key={group} className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/50">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCategoryGroup(isOpen ? null : group)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-xs font-bold tracking-wide transition-colors ${
+                      isOpen ? "text-emerald-400 bg-emerald-500/10" : "text-zinc-300 hover:text-white hover:bg-zinc-900"
                     }`}
                   >
-                    {checked && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() =>
-                      handleCheckboxChange(
-                        cat,
-                        selectedCategory,
-                        setSelectedCategory
-                      )
-                    }
-                    className="hidden"
-                  />
-                  <span>{cat}</span>
-                </label>
+                    <span>{group}</span>
+                    <span className="flex items-center gap-2 text-[10px] text-zinc-500">
+                      {selectedCount > 0 && (
+                        <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 font-bold text-black">
+                          {selectedCount}
+                        </span>
+                      )}
+                      {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="grid grid-cols-1 gap-1 border-t border-zinc-800 p-2">
+                      {groupCategories.map((cat) => {
+                        const checked = selectedCategory.includes(cat.slug);
+                        return (
+                          <label
+                            key={cat.slug}
+                            className={`flex items-center gap-2 rounded-md px-2 py-2 text-[11px] cursor-pointer transition-colors ${
+                              checked ? "bg-emerald-500/10 text-emerald-300" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                handleCheckboxChange(cat.slug, selectedCategory, setSelectedCategory)
+                              }
+                              className="h-3.5 w-3.5 accent-emerald-500"
+                            />
+                            <span>{cat.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

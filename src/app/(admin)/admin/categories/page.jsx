@@ -7,8 +7,19 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState("");
+  const [newGroup, setNewGroup] = useState("MEN");
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [editingGroup, setEditingGroup] = useState("MEN");
+
+  const groups = ["MEN", "WOMEN", "FOOTWEAR", "ACCESSORIES"];
+  const slugify = (value) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
 
   // 1. FETCH CATEGORIES FROM PRISMA API
   const fetchCategories = async () => {
@@ -34,15 +45,16 @@ export default function CategoriesPage() {
     if (!newCategory.trim()) return;
 
     try {
-      const slug = newCategory.toLowerCase().trim().replace(/\s+/g, "-");
+      const slug = `${newGroup.toLowerCase()}-${slugify(newCategory)}`;
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategory, slug }),
+        body: JSON.stringify({ name: newCategory, slug, group: newGroup }),
       });
 
       if (res.ok) {
         setNewCategory("");
+        setNewGroup("MEN");
         fetchCategories();
       } else {
         const errorData = await res.json();
@@ -57,20 +69,22 @@ export default function CategoriesPage() {
   const handleStartEdit = (cat) => {
     setEditingId(cat.id);
     setEditingName(cat.name);
+    setEditingGroup(cat.group === "OTHER" ? "MEN" : cat.group);
   };
 
   const handleSaveEdit = async (id) => {
     try {
-      const slug = editingName.toLowerCase().trim().replace(/\s+/g, "-");
+      const slug = `${editingGroup.toLowerCase()}-${slugify(editingName)}`;
       const res = await fetch(`/api/categories/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editingName, slug }),
+        body: JSON.stringify({ name: editingName, slug, group: editingGroup }),
       });
 
       if (res.ok) {
         setEditingId(null);
         setEditingName("");
+        setEditingGroup("MEN");
         fetchCategories();
       } else {
         alert("Failed to update category");
@@ -117,6 +131,13 @@ export default function CategoriesPage() {
         onSubmit={handleAddCategory}
         className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl flex items-center gap-3"
       >
+        <select
+          value={newGroup}
+          onChange={(e) => setNewGroup(e.target.value)}
+          className="bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+        >
+          {groups.map((group) => <option key={group}>{group}</option>)}
+        </select>
         <input
           type="text"
           placeholder="Enter new category name (e.g. Oversized Tees)"
@@ -138,6 +159,7 @@ export default function CategoriesPage() {
           <thead className="bg-zinc-900/80 uppercase text-[10px] text-zinc-400 font-semibold tracking-wider border-b border-zinc-800">
             <tr>
               <th className="py-3.5 px-4">Category Name</th>
+              <th className="py-3.5 px-4">Group</th>
               <th className="py-3.5 px-4">Slug</th>
               <th className="py-3.5 px-4">Products</th>
               <th className="py-3.5 px-4 text-right">Actions</th>
@@ -146,7 +168,7 @@ export default function CategoriesPage() {
           <tbody className="divide-y divide-zinc-800/60">
             {loading ? (
               <tr>
-                <td colSpan="4" className="py-8 text-center text-zinc-500">
+                <td colSpan="5" className="py-8 text-center text-zinc-500">
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
                     Loading categories...
@@ -155,7 +177,7 @@ export default function CategoriesPage() {
               </tr>
             ) : categories.length === 0 ? (
               <tr>
-                <td colSpan="4" className="py-8 text-center text-zinc-500">
+                <td colSpan="5" className="py-8 text-center text-zinc-500">
                   No categories found. Create one above!
                 </td>
               </tr>
@@ -172,6 +194,20 @@ export default function CategoriesPage() {
                       />
                     ) : (
                       cat.name
+                    )}
+                  </td>
+
+                  <td className="py-3.5 px-4">
+                    {editingId === cat.id ? (
+                      <select
+                        value={editingGroup}
+                        onChange={(e) => setEditingGroup(e.target.value)}
+                        className="bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                      >
+                        {groups.map((group) => <option key={group}>{group}</option>)}
+                      </select>
+                    ) : (
+                      <span className="text-emerald-400">{cat.group}</span>
                     )}
                   </td>
 

@@ -96,9 +96,7 @@ const RegisterPage = () => {
           <h1 className="text-3xl font-extrabold tracking-wider uppercase text-white">
             Create an Account
           </h1>
-          <p className="text-xs text-zinc-400">
-            Powered by Supabase Authentication
-          </p>
+          
         </div>
 
         {apiError && (

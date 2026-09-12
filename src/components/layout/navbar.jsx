@@ -8,6 +8,8 @@ import { Search, ShoppingCart, User, Menu, X, Plus, Minus } from "lucide-react";
 import Image from "next/image";
 import Cart from "../cart";
 import { useCart } from "@/context/CartContext";
+import { WEBSITE_CATEGORIES } from "@/lib/websiteCategories";
+import { supabase } from "@/lib/supabase";
 
 const Navbar = () => {
   // Context se cart state aur handlers consume karein
@@ -23,6 +25,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [sessionUser, setSessionUser] = useState(null);
   const timeoutRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -55,6 +58,23 @@ const Navbar = () => {
       document.body.style.overflow = "unset";
     };
   }, [isMobileOpen, isCartOpen, isSearchOpen]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setSessionUser(data.session?.user || null);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionUser(session?.user || null);
+    });
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isSearchOpen) return undefined;
@@ -127,34 +147,22 @@ const Navbar = () => {
     };
   };
 
-  const shopCategory = [
-    {
-      title: "T-Shirt",
-      links: ["Relaxed Fit", "Oversized Fit", "Sleeveless T-shirt"],
-    },
-    {
-      title: "Bottomwear",
-      links: ["Cargo", "Joggers", "Shorts", "Denims"],
-    },
-    {
-      title: "Winter Wear",
-      links: ["Jacket", "Sweatshirt", "Hoodies", "Long Coat"],
-    },
-    {
-      title: "Direct Links",
-      isDirect: true,
-      links: ["Polo", "Shirts", "Sale", "Socks", "Luxe"],
-    },
-  ];
+  const shopCategory = WEBSITE_CATEGORIES.map(({ group, items }) => ({
+    title: group,
+    links: items.map(([label, slug]) => ({
+      label,
+      slug,
+      groupSlug: group.toLowerCase(),
+      itemSlug: slug.replace(`${group.toLowerCase()}-`, ""),
+    })),
+  }));
 
   const shopCollection = [
-    "Wildlands Collection",
-    "Drift Joggers Collection",
-    "Ember steel winter '24",
-    "The conqueror autumn winter 2023",
-    "Summer spring 2024",
-    "Knit wear collection",
-    "Untamed wild",
+    "New Arrivals",
+    "Essentials",
+    "Best Sellers",
+    "Signature Collection",
+    "Seasonal Collection",
   ];
 
   const policy = [
@@ -237,11 +245,11 @@ const Navbar = () => {
                                   <div className={styles.columnList}>
                                     {col.links.map((link) => (
                                       <Link
-                                        key={link}
-                                        href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                        key={link.slug}
+                                        href={`/category/${link.groupSlug}/${link.itemSlug}`}
                                         className={styles.dropdownLink}
                                       >
-                                        {link}
+                                        {link.label}
                                       </Link>
                                     ))}
                                   </div>
@@ -250,11 +258,11 @@ const Navbar = () => {
                                 <div className="flex flex-col gap-3">
                                   {col.links.map((link) => (
                                     <Link
-                                      key={link}
-                                      href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                      key={link.slug}
+                                      href={`/category/${link.groupSlug}/${link.itemSlug}`}
                                       className={styles.collectionLink}
                                     >
-                                      {link}
+                                      {link.label}
                                     </Link>
                                   ))}
                                 </div>
@@ -290,7 +298,7 @@ const Navbar = () => {
                           {shopCollection.map((item) => (
                             <Link
                               key={item}
-                              href={`/collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                              href={`/shop_by_collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
                               className={styles.collectionLink}
                             >
                               {item}
@@ -371,9 +379,26 @@ const Navbar = () => {
             >
               <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Link>
+            {sessionUser ? (
+              <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              </Link>
+            ) : (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link
+                  href="/login"
+                  className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider text-zinc-200 transition-colors hover:border-emerald-500 hover:text-emerald-400 sm:px-3 sm:text-[10px]"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-md bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-emerald-400 sm:px-3 sm:text-[10px]"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
             
             {/* CART BUTTON WITH CONTEXT TRIGGER AND REAL-TIME COUNTER */}
             <button 
@@ -583,12 +608,12 @@ const Navbar = () => {
                                 >
                                   {cat.links.map((link) => (
                                     <Link
-                                      key={link}
-                                      href={`/category/${link.toLowerCase().replace(/\s+/g, "-")}`}
+                                      key={link.slug}
+                                      href={`/category/${link.groupSlug}/${link.itemSlug}`}
                                       onClick={() => setIsMobileOpen(false)}
                                       className="block py-2 sm:py-2.5 text-[11px] sm:text-xs text-gray-600 hover:text-black border-b border-gray-100 last:border-0"
                                     >
-                                      {link}
+                                      {link.label}
                                     </Link>
                                   ))}
                                 </motion.div>
@@ -619,7 +644,7 @@ const Navbar = () => {
                     {shopCollection.map((item) => (
                       <Link
                         key={item}
-                        href={`/collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                        href={`/shop_by_collection/${item.toLowerCase().replace(/\s+/g, "-")}`}
                         onClick={() => setIsMobileOpen(false)}
                         className="px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-800 hover:bg-gray-50 border-b border-gray-100"
                       >
@@ -630,6 +655,20 @@ const Navbar = () => {
                 )}
 
                 <div className="mt-4 border-t border-gray-200 pt-2">
+                  {sessionUser ? (
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsMobileOpen(false)}
+                      className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                    >
+                      My Profile
+                    </Link>
+                  ) : (
+                    <div className="flex gap-2 px-4 py-3 sm:px-5">
+                      <Link href="/login" onClick={() => setIsMobileOpen(false)} className="flex-1 border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-800">Login</Link>
+                      <Link href="/register" onClick={() => setIsMobileOpen(false)} className="flex-1 bg-black px-3 py-2 text-center text-xs font-semibold text-white">Register</Link>
+                    </div>
+                  )}
                   <Link
                     href="/sales"
                     onClick={() => setIsMobileOpen(false)}

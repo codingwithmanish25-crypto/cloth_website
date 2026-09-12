@@ -6,11 +6,31 @@ export async function PUT(req, { params }) {
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, group } = body;
+    const normalizedSlug = `${group.toLowerCase()}-${slug.replace(/^[^-]+-/, "")}`;
+    const categoryId = BigInt(id);
+    const existingCategory = await prisma.category.findUnique({
+      where: { slug: normalizedSlug },
+    });
+
+    if (existingCategory && existingCategory.id !== categoryId) {
+      await prisma.$transaction([
+        prisma.product.updateMany({
+          where: { categoryId },
+          data: { categoryId: existingCategory.id },
+        }),
+        prisma.category.delete({ where: { id: categoryId } }),
+      ]);
+
+      return NextResponse.json({
+        ...existingCategory,
+        id: existingCategory.id.toString(),
+      });
+    }
 
     const updatedCategory = await prisma.category.update({
-      where: { id: BigInt(id) },
-      data: { name, slug },
+      where: { id: categoryId },
+      data: { name, slug: normalizedSlug },
     });
 
     return NextResponse.json({

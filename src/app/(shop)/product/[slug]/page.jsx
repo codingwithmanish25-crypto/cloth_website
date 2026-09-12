@@ -67,7 +67,7 @@ export default async function ProductDetailPage({ params }) {
           </div>
         </div>
 
-        <CategoryReviews />
+        <CategoryReviews productSlug={product.slug} />
         <ProductFaq />
       </div>
     </div>

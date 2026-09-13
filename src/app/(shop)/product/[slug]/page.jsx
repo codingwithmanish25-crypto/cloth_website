@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 
 import ProductGallery from "@/components/product-detail/ProductGallery";
 import ProductInfo from "@/components/product-detail/ProductInfo";
@@ -7,7 +8,13 @@ import ProductFaq from "@/components/product-detail/ProductFaq";
 
 async function getProductBySlug(slug) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const requestHeaders = await headers();
+    const host = requestHeaders.get("host");
+    const protocol = requestHeaders.get("x-forwarded-proto") || "http";
+    const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    const baseUrl = configuredUrl && !configuredUrl.includes("localhost")
+      ? configuredUrl
+      : `${protocol}://${host}`;
     const res = await fetch(`${baseUrl}/api/products/${slug}`, {
       cache: "no-store",
     });

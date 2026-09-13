@@ -13,6 +13,7 @@ import {
   ExternalLink,
   TicketPercent,
   Star,
+  Mail,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +25,7 @@ const navLinks = [
   { name: "Customers", href: "/admin/users", icon: Users },
   { name: "Cupon", href: "/admin/cupon", icon: TicketPercent },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
+  { name: "Newsletter", href: "/admin/newsletter", icon: Mail },
 ];
 
 export default function AdminShell({ children }) {

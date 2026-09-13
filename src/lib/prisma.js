@@ -10,7 +10,7 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
 export const prisma =
-  (globalForPrisma.prisma?.coupon
+  (globalForPrisma.prisma
     ? globalForPrisma.prisma
     : new PrismaClient({
         adapter,

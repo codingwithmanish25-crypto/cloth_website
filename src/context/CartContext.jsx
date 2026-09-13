@@ -8,7 +8,7 @@ export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   const [cartItems, setCartItems] = useState([]);
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [appliedCoupons, setAppliedCoupons] = useState([]);
   const [couponError, setCouponError] = useState("");
 
   const openCart = () => setIsCartOpen(true);
@@ -84,17 +84,24 @@ export const CartProvider = ({ children }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Coupon could not be applied");
-      setAppliedCoupon(result);
+      setAppliedCoupons((currentCoupons) => {
+        if (currentCoupons.some((coupon) => coupon.id === result.id)) {
+          setCouponError("This coupon is already applied");
+          return currentCoupons;
+        }
+        return [...currentCoupons, result];
+      });
       return result;
     } catch (error) {
-      setAppliedCoupon(null);
       setCouponError(error.message);
       return null;
     }
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
+  const removeCoupon = (couponId) => {
+    setAppliedCoupons((currentCoupons) =>
+      currentCoupons.filter((coupon) => coupon.id !== couponId)
+    );
     setCouponError("");
   };
 
@@ -108,7 +115,7 @@ export const CartProvider = ({ children }) => {
         addToCart,
         updateQuantity,
         removeFromCart,
-        appliedCoupon,
+        appliedCoupons,
         couponError,
         applyCoupon,
         removeCoupon,

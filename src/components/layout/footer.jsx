@@ -1,8 +1,35 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { MoveRight } from 'lucide-react';
 
-const footer = () => {
+const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not subscribe");
+      setEmail("");
+      setMessage("You're on the list.");
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const company = [
     { title: "Home page", href: "/" },
     { title: "Contact Us", href: "/contact-us" },
@@ -35,19 +62,26 @@ const footer = () => {
           </div>
 
           {/* Email Input Field */}
-          <div className="relative w-full md:w-96 flex items-center">
+          <form onSubmit={handleSubmit} className="relative w-full md:w-96 flex items-center">
             <input
               type="email"
+              required
               placeholder="Email address"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={submitting}
               className="w-full bg-zinc-900/80 border border-zinc-800 text-sm text-white placeholder-zinc-500 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:border-[#10b981] transition-colors"
             />
             <button 
+              type="submit"
+              disabled={submitting}
               className="absolute right-2 p-2 text-zinc-400 hover:text-[#10b981] transition-colors cursor-pointer"
               aria-label="Subscribe"
             >
               <MoveRight className="w-5 h-5" />
             </button>
-          </div>
+            {message && <p className="absolute top-full mt-2 text-xs text-zinc-400">{message}</p>}
+          </form>
         </div>
 
         {/* BOTTOM SECTION: Links Grid */}
@@ -101,4 +135,4 @@ const footer = () => {
   );
 };
 
-export default footer;
+export default Footer;

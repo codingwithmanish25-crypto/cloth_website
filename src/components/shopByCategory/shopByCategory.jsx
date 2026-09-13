@@ -24,6 +24,7 @@ const ProductSkeletonGrid = () => (
 const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
 
   const [filters, setFilters] = useState({
     sortBy: "recommended",
@@ -38,22 +39,41 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
 
   // Fetch Products
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/products");
+        setFetchError("");
+        const res = await fetch("/api/products", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`Products request failed (${res.status})`);
         const data = await res.json();
         if (Array.isArray(data)) {
           setProducts(data);
+        } else {
+          throw new Error("Invalid products response");
         }
       } catch (error) {
-        console.error("Error fetching products:", error);
+        if (error.name !== "AbortError") {
+          console.error("Error fetching products:", error);
+          setFetchError("Products could not be loaded. Please try again.");
+        }
       } finally {
         setLoading(false);
+        clearTimeout(timeoutId);
       }
     };
 
     fetchProducts();
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const handleFilterChange = (newFilters) => {
@@ -214,6 +234,10 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
         <main className="flex-1">
           {loading ? (
             <ProductSkeletonGrid />
+          ) : fetchError ? (
+            <div className="text-center py-16 border border-dashed border-zinc-800 rounded-xl">
+              <p className="text-zinc-400 text-sm">{fetchError}</p>
+            </div>
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {filteredProducts.map((item, index) => (

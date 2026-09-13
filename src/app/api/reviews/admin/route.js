@@ -9,16 +9,33 @@ function serialize(data) {
   );
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const reviews = await prisma.review.findMany({
-      include: {
-        product: { select: { title: true, slug: true } },
-        user: { select: { name: true, username: true, emails: true } },
-      },
-      orderBy: { createdAt: "desc" },
+    const searchParams = new URL(request.url).searchParams;
+    const page = Math.max(Number(searchParams.get("page")) || 1, 1);
+    const pageSize = 10;
+    const where = {};
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        include: {
+          product: { select: { title: true, slug: true } },
+          user: { select: { name: true, username: true, emails: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.review.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      reviews: serialize(reviews),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
     });
-    return NextResponse.json(serialize(reviews));
   } catch (error) {
     console.error("GET Admin Reviews Error:", error);
     return NextResponse.json({ error: "Failed to load reviews" }, { status: 500 });

@@ -8,19 +8,19 @@ const notfound = () => {
     {
       title: "Oversized Tees",
       image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80",
-      link: "/category/oversized-fit",
+      link: "/category/men/shirts",
       badge: "Trending",
     },
     {
       title: "Casual Joggers",
       image: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=500&q=80",
-      link: "/category/joggers",
+      link: "/category/men/trousers",
       badge: "Best Seller",
     },
     {
       title: "Relaxed Fit Shirts",
       image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&q=80",
-      link: "/category/relaxed-fit",
+      link: "/category/men/shirts",
       badge: "New Arrival",
     },
   ];

@@ -88,7 +88,19 @@ export async function GET(req) {
 
     const products = await prisma.product.findMany({
       where: Object.keys(where).length ? where : undefined,
-      include: { category: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        price: true,
+        originalPrice: true,
+        fitTag: true,
+        collectionSlugs: true,
+        isSoldOut: true,
+        availableSizes: true,
+        images: true,
+        category: { select: { slug: true } },
+      },
       orderBy: { createdAt: "desc" },
       ...(limit ? { skip: (page - 1) * limit, take: limit } : query ? { take: 8 } : {}),
     });

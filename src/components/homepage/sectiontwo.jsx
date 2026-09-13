@@ -9,55 +9,55 @@ const Sectiontwo = () => {
     {
       id: 1,
       title: "RELAXED FIT",
-      href: "/category/relaxed-fit",
+      href: "/category/men/shirts",
       sectionimage: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp"
     },
     {
       id: 2,
       title: "OVERSIZED T-SHIRTS",
-      href: "/category/oversized-tshirts",
+      href: "/category/men/shirts",
       sectionimage: "/homesection/oversizedfit-collection_tile_238x238_b3816dc9-d000-4a20-bc5e-e2dbb5be3168.webp"
     },
     {
       id: 3,
       title: "SLEEVELESS",
-      href: "/category/sleeveless",
+      href: "/category/men/henley",
       sectionimage: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp"
     },
     {
       id: 4,
       title: "JACKET",
-      href: "/category/jacket",
+      href: "/category/men/jackets",
       sectionimage: "/homesection/oversizedfit-collection_tile_238x238_b3816dc9-d000-4a20-bc5e-e2dbb5be3168.webp"
     },
     {
       id: 5,
       title: "JOGGERS",
-      href: "/category/joggers",
+      href: "/category/men/trousers",
       sectionimage: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp"
     },
     {
       id: 6,
       title: "DENIM",
-      href: "/category/denim",
+      href: "/category/men/denim",
       sectionimage: "/homesection/oversizedfit-collection_tile_238x238_b3816dc9-d000-4a20-bc5e-e2dbb5be3168.webp"
     },
     {
       id: 7,
       title: "HOODIES",
-      href: "/category/hoodies",
+      href: "/category/men/knitwear",
       sectionimage: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp"
     },
     {
       id: 8,
       title: "SHIRTS",
-      href: "/category/shirts",
+      href: "/category/men/shirts",
       sectionimage: "/homesection/oversizedfit-collection_tile_238x238_b3816dc9-d000-4a20-bc5e-e2dbb5be3168.webp"
     },
     {
       id: 9,
       title: "POLO SHIRTS",
-      href: "/category/polo-shirts",
+      href: "/category/men/shirts",
       sectionimage: "/homesection/relaxedfit-collection_tile_238x238_f18634bf-7396-427f-9c1f-f932ab2ba3b6.webp"
     }
   ];

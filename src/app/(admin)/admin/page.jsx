@@ -1,21 +1,33 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { DollarSign, ShoppingBag, Package, Users, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
-  // Demo Analytics Data (Supabase DB se live replace hoga)
-  const stats = [
-    { title: "Total Revenue", value: "₹1,24,500", change: "+12.5%", icon: DollarSign },
-    { title: "Total Orders", value: "84", change: "+8.2%", icon: ShoppingBag },
-    { title: "Products Active", value: "24", change: "0", icon: Package },
-    { title: "Total Customers", value: "142", change: "+18.4%", icon: Users },
-  ];
+  const [dashboard, setDashboard] = useState(null);
+  const [error, setError] = useState("");
 
-  const recentOrders = [
-    { id: "ORD-8921", customer: "Rahul Sharma", items: "2x T-Shirt", total: "₹3,198", status: "Delivered", date: "Today" },
-    { id: "ORD-8920", customer: "Priya Patel", items: "1x Joggers", total: "₹1,599", status: "Processing", date: "Today" },
-    { id: "ORD-8919", customer: "Amit Kumar", items: "1x Hoodie", total: "₹2,499", status: "Shipped", date: "Yesterday" },
-  ];
+  useEffect(() => {
+    fetch("/api/admin/dashboard")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load dashboard");
+        setDashboard(data);
+      })
+      .catch((loadError) => setError(loadError.message));
+  }, []);
+
+  const stats = dashboard
+    ? [
+        { title: "Total Revenue", value: `₹${dashboard.stats.revenue.toLocaleString("en-IN")}`, change: `${dashboard.stats.paidOrders} paid`, icon: DollarSign },
+        { title: "Total Orders", value: dashboard.stats.orders.toLocaleString("en-IN"), change: "All statuses", icon: ShoppingBag },
+        { title: "Products Active", value: `${dashboard.stats.activeProducts}/${dashboard.stats.products}`, change: "In stock / total", icon: Package },
+        { title: "Total Customers", value: dashboard.stats.customers.toLocaleString("en-IN"), change: "Registered users", icon: Users },
+      ]
+    : [];
+
+  const recentOrders = dashboard?.recentOrders || [];
 
   return (
     <div className="space-y-8">
@@ -35,9 +47,11 @@ export default function AdminDashboardPage() {
         </Link>
       </div>
 
+      {error && <p className="rounded-lg border border-red-900 bg-red-950/30 p-4 text-sm text-red-400">{error}</p>}
+
       {/* STATS METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((item, index) => {
+        {(stats.length ? stats : Array.from({ length: 4 }, (_, index) => ({ title: "Loading...", value: "-", change: "", icon: [DollarSign, ShoppingBag, Package, Users][index] }))).map((item, index) => {
           const Icon = item.icon;
           return (
             <div
@@ -83,18 +97,18 @@ export default function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60">
-              {recentOrders.map((order) => (
+              {recentOrders.length === 0 ? <tr><td colSpan="6" className="py-10 text-center text-zinc-500">No orders in the database yet.</td></tr> : recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-zinc-900/30 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-medium text-emerald-400">{order.id}</td>
-                  <td className="py-3.5 px-4 font-medium text-white">{order.customer}</td>
-                  <td className="py-3.5 px-4 text-zinc-400">{order.items}</td>
-                  <td className="py-3.5 px-4 font-semibold text-white">{order.total}</td>
+                  <td className="py-3.5 px-4 font-mono font-medium text-emerald-400">#{order.id}</td>
+                  <td className="py-3.5 px-4 font-medium text-white">{order.user?.name || order.user?.username || "Customer"}</td>
+                  <td className="py-3.5 px-4 text-zinc-400">{Array.isArray(order.items) ? order.items.map((item) => `${item.quantity || 1}x ${item.title || "Product"}`).join(", ") : "-"}</td>
+                  <td className="py-3.5 px-4 font-semibold text-white">₹{Number(order.total).toLocaleString("en-IN")}</td>
                   <td className="py-3.5 px-4">
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        order.status === "Delivered"
+                        order.status === "DELIVERED"
                           ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
-                          : order.status === "Processing"
+                          : order.status === "PROCESSING"
                           ? "bg-amber-950 text-amber-400 border border-amber-800"
                           : "bg-blue-950 text-blue-400 border border-blue-800"
                       }`}
@@ -102,7 +116,7 @@ export default function AdminDashboardPage() {
                       {order.status}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-zinc-500">{order.date}</td>
+                  <td className="py-3.5 px-4 text-zinc-500">{new Date(order.createdAt).toLocaleDateString("en-IN")}</td>
                 </tr>
               ))}
             </tbody>

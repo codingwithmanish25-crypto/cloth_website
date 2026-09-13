@@ -3,15 +3,18 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, Trash2, Plus, Minus, Tag, ChevronRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 const Cart = () => {
+  const router = useRouter();
   const {
     isCartOpen,
     closeCart,
     cartItems,
     updateQuantity,
     removeFromCart,
-    appliedCoupon,
+    appliedCoupons,
     couponError,
     applyCoupon,
     removeCoupon,
@@ -20,14 +23,24 @@ const Cart = () => {
   const [coupons, setCoupons] = useState([]);
   const [couponCode, setCouponCode] = useState("");
   const [couponBusy, setCouponBusy] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const discount = appliedCoupon
-    ? appliedCoupon.discountType === "PERCENTAGE"
-      ? Math.min(subtotal, (subtotal * appliedCoupon.discountValue) / 100)
-      : Math.min(subtotal, appliedCoupon.discountValue)
-    : 0;
+  const discount = Math.min(
+    subtotal,
+    appliedCoupons.reduce((totalDiscount, coupon) => {
+      const couponDiscount = coupon.discountType === "PERCENTAGE"
+        ? (subtotal * coupon.discountValue) / 100
+        : coupon.discountValue;
+      return totalDiscount + Math.min(subtotal, couponDiscount);
+    }, 0)
+  );
   const total = Math.max(0, subtotal - discount);
 
   useEffect(() => {
@@ -48,14 +61,58 @@ const Cart = () => {
     }
   };
 
-  if (!isCartOpen) return null;
-
-  const getOfferProgress = () => {
-    if (totalItems >= 5) return 100;
-    if (totalItems >= 3) return 66;
-    if (totalItems >= 2) return 33;
-    return (totalItems / 2) * 33;
+  const openCheckout = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push("/login?redirect=/"); return; }
+    setCheckoutError("");
+    const response = await fetch("/api/users/profile", { headers: { Authorization: `Bearer ${session.access_token}` } });
+    const data = await response.json();
+    if (!response.ok) { setCheckoutError(data.error || "Could not load addresses"); return; }
+    const savedAddresses = Array.isArray(data.addresses) ? data.addresses : [];
+    setAddresses(savedAddresses); setSelectedAddress(savedAddresses[0] || ""); setIsCheckoutOpen(true);
   };
+
+  const saveNewAddress = async () => {
+    const value = newAddress.trim();
+    if (value.length < 10) { setCheckoutError("Please enter a complete address"); return; }
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch("/api/users/profile", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ addresses: [...addresses, value] }) });
+    if (!response.ok) { setCheckoutError("Could not save address"); return; }
+    setAddresses((current) => [...current, value]); setSelectedAddress(value); setNewAddress(""); setCheckoutError("");
+  };
+
+  const startPayment = async () => {
+    if (!selectedAddress) { setCheckoutError("Select or add a delivery address"); return; }
+    setCheckoutBusy(true); setCheckoutError("");
+    try {
+      const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!key) throw new Error("Razorpay key is not configured");
+      if (!window.Razorpay) {
+        await new Promise((resolve, reject) => { const script = document.createElement("script"); script.src = "https://checkout.razorpay.com/v1/checkout.js"; script.onload = resolve; script.onerror = () => reject(new Error("Payment gateway could not load")); document.body.appendChild(script); });
+      }
+      const payment = new window.Razorpay({ key, amount: Math.round(total * 100), currency: "INR", name: "Cloth Website", description: "Order payment", handler: async (result) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setCheckoutError("Your login session expired. Please log in again.");
+          return;
+        }
+
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ items: cartItems.map(({ id, title, price, quantity, size }) => ({ id, title, price, quantity, size })), subtotal, discount, total, address: selectedAddress, paymentId: result.razorpay_payment_id }),
+        });
+        if (!response.ok) { setCheckoutError("Payment succeeded but order could not be saved. Contact support."); return; }
+        setIsCheckoutOpen(false); closeCart(); alert("Payment successful. Your order is pending confirmation.");
+      }, theme: { color: "#f97316" } });
+      payment.open();
+    } catch (error) { setCheckoutError(error.message); } finally { setCheckoutBusy(false); }
+  };
+
+  if (!isCartOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end font-sans">
@@ -81,34 +138,6 @@ const Cart = () => {
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto space-y-5">
-          {/* Progress Bar */}
-          <div className="px-5 pt-4 pb-2 bg-zinc-900 border-b border-zinc-800">
-            <div className="relative w-full h-1.5 bg-zinc-800 rounded-full mb-3">
-              <div
-                className="absolute top-0 left-0 h-full bg-orange-500 rounded-full transition-all duration-300"
-                style={{ width: `${getOfferProgress()}%` }}
-              />
-              <div className="absolute -top-1 left-[33%] -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-zinc-950 border-2 border-orange-500" />
-              <div className="absolute -top-1 left-[66%] -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-zinc-950 border-2 border-orange-500" />
-              <div className="absolute -top-1 left-[100%] -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-zinc-950 border-2 border-orange-500" />
-            </div>
-
-            <div className="flex justify-between text-[11px] font-semibold text-zinc-300">
-              <div className="text-center">
-                <span>Buy 2</span>
-                <p className="text-[10px] text-zinc-500">10% Off</p>
-              </div>
-              <div className="text-center">
-                <span>Buy 3</span>
-                <p className="text-[10px] text-zinc-500">15% Off</p>
-              </div>
-              <div className="text-center">
-                <span>Buy 5</span>
-                <p className="text-[10px] text-zinc-500">20% Off</p>
-              </div>
-            </div>
-          </div>
-
           {/* Cart Items */}
           <div className="px-4 space-y-4">
             {cartItems.length > 0 ? (
@@ -182,17 +211,21 @@ const Cart = () => {
             >
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-orange-500" />
-                <span>{appliedCoupon ? `${appliedCoupon.code} applied` : "Apply Coupons"}</span>
+                <span>{appliedCoupons.length ? `${appliedCoupons.length} coupon${appliedCoupons.length > 1 ? "s" : ""} applied` : "Apply Coupons"}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-zinc-500" />
             </button>
-            {appliedCoupon && (
-              <button
-                onClick={removeCoupon}
-                className="mt-2 text-[11px] text-red-400 hover:text-red-300"
-              >
-                Remove coupon
-              </button>
+            {appliedCoupons.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {appliedCoupons.map((coupon) => (
+                  <div key={coupon.id} className="flex items-center justify-between text-[11px] text-emerald-400">
+                    <span>{coupon.code} applied</span>
+                    <button onClick={() => removeCoupon(coupon.id)} className="text-red-400 hover:text-red-300">
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -208,7 +241,7 @@ const Cart = () => {
           </div>
           {discount > 0 && (
             <div className="flex items-center justify-between mb-3 text-xs text-emerald-400">
-              <span>Discount ({appliedCoupon.code})</span>
+              <span>Discount ({appliedCoupons.length} coupon{appliedCoupons.length > 1 ? "s" : ""})</span>
               <span>- ₹ {discount.toLocaleString("en-IN")}.00</span>
             </div>
           )}
@@ -216,12 +249,24 @@ const Cart = () => {
             <span>Total</span>
             <span>₹ {total.toLocaleString("en-IN")}.00</span>
           </div>
-          <button className="w-full bg-orange-600 hover:bg-orange-500 text-black font-bold py-3.5 rounded uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition">
+          <button onClick={openCheckout} disabled={!cartItems.length} className="w-full bg-orange-600 hover:bg-orange-500 text-black font-bold py-3.5 rounded uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition disabled:cursor-not-allowed disabled:opacity-40">
             <span>Proceed to Buy</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </aside>
+
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-zinc-700 bg-zinc-950 p-5 text-white">
+            <div className="mb-4 flex items-center justify-between"><h3 className="text-sm font-bold uppercase">Delivery address</h3><button onClick={() => setIsCheckoutOpen(false)} className="text-zinc-400">×</button></div>
+            <div className="space-y-2">{addresses.map((address) => <label key={address} className="flex gap-3 rounded border border-zinc-800 p-3 text-xs"><input type="radio" name="address" checked={selectedAddress === address} onChange={() => setSelectedAddress(address)} className="accent-orange-500" /><span>{address}</span></label>)}</div>
+            <div className="mt-4 flex gap-2"><textarea value={newAddress} onChange={(event) => setNewAddress(event.target.value)} rows={2} placeholder="Add another complete address" className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 p-2 text-xs" /><button onClick={saveNewAddress} className="self-end rounded bg-zinc-800 px-3 py-2 text-xs">Add address</button></div>
+            {checkoutError && <p className="mt-3 text-xs text-red-400">{checkoutError}</p>}
+            <button onClick={startPayment} disabled={checkoutBusy || !selectedAddress} className="mt-5 w-full rounded bg-orange-600 py-3 text-xs font-bold uppercase text-black disabled:opacity-40">{checkoutBusy ? "Opening payment..." : `Pay ₹${total.toLocaleString("en-IN")}`}</button>
+          </div>
+        </div>
+      )}
 
       {isCouponOpen && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 sm:items-center">

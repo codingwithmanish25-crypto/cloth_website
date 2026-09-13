@@ -8,7 +8,7 @@ export default function ShopLayout({ children }) {
   return (
     <CartProvider>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 bg-[#0a0a0a] text-white">{children}</main>
       <Footer />
       <WhatsAppButton />
       <Cart />

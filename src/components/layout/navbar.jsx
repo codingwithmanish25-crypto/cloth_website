@@ -4,7 +4,7 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "@/components/layout/navbar.module.css";
-import { Search, ShoppingCart, User, Menu, X, Plus, Minus } from "lucide-react";
+import { Search, ShoppingCart, User, ClipboardList, Menu, X, Plus, Minus } from "lucide-react";
 import Image from "next/image";
 import Cart from "../cart";
 import { useCart } from "@/context/CartContext";
@@ -94,8 +94,6 @@ const Navbar = () => {
 
     const query = searchQuery.trim();
     if (!query) {
-      setSearchResults([]);
-      setIsSearching(false);
       return undefined;
     }
 
@@ -380,9 +378,14 @@ const Navbar = () => {
               <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             {sessionUser ? (
-              <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
-                <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Link>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link href="/orders" className="p-1 hover:text-[#10b981] transition-colors" aria-label="My Orders">
+                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Link>
+                <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Link>
+              </div>
             ) : (
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
@@ -656,13 +659,22 @@ const Navbar = () => {
 
                 <div className="mt-4 border-t border-gray-200 pt-2">
                   {sessionUser ? (
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsMobileOpen(false)}
-                      className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-50"
-                    >
-                      My Profile
-                    </Link>
+                    <>
+                      <Link
+                        href="/profile"
+                        onClick={() => setIsMobileOpen(false)}
+                        className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/orders"
+                        onClick={() => setIsMobileOpen(false)}
+                        className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                      >
+                        My Orders
+                      </Link>
+                    </>
                   ) : (
                     <div className="flex gap-2 px-4 py-3 sm:px-5">
                       <Link href="/login" onClick={() => setIsMobileOpen(false)} className="flex-1 border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-800">Login</Link>

@@ -3,9 +3,10 @@ export const WEBSITE_CATEGORIES = [
     group: "MEN",
     items: [
       ["Shirts", "men-shirts"],
-      ["Polos", "men-polos"],
+      ["Henley", "men-henley"],
+      ["Denim", "men-denim"],
+      ["Korean pants", "men-korean-pants"],
       ["Trousers", "men-trousers"],
-      ["Blazers", "men-blazers"],
       ["Jackets", "men-jackets"],
       ["Knitwear", "men-knitwear"],
       ["Co-ords", "men-co-ords"],
@@ -23,24 +24,6 @@ export const WEBSITE_CATEGORIES = [
       ["Knitwear", "women-knitwear"],
       ["Co-ords", "women-co-ords"],
       ["Accessories", "women-accessories"],
-    ],
-  },
-  {
-    group: "FOOTWEAR",
-    items: [
-      ["Loafers", "footwear-loafers"],
-      ["Sneakers", "footwear-sneakers"],
-      ["Formal Shoes", "footwear-formal-shoes"],
-    ],
-  },
-  {
-    group: "ACCESSORIES",
-    items: [
-      ["Belts", "accessories-belts"],
-      ["Wallets", "accessories-wallets"],
-      ["Watches", "accessories-watches"],
-      ["Sunglasses", "accessories-sunglasses"],
-      ["Bags", "accessories-bags"],
     ],
   },
 ];

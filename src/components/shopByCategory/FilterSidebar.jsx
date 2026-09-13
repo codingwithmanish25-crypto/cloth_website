@@ -246,9 +246,27 @@ const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
                               onChange={() =>
                                 handleCheckboxChange(cat.slug, selectedCategory, setSelectedCategory)
                               }
-                              className="h-3.5 w-3.5 accent-emerald-500"
+                              className="peer sr-only"
                             />
-                            <span>{cat.name}</span>
+                            <span
+                              aria-hidden="true"
+                              className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-zinc-600 bg-zinc-950 transition-colors peer-checked:border-emerald-400 peer-checked:bg-emerald-500 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-400/60 peer-focus-visible:ring-offset-1 peer-focus-visible:ring-offset-zinc-950"
+                            >
+                              <svg
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                className="h-3 w-3 text-zinc-950 opacity-0 transition-opacity peer-checked:opacity-100"
+                              >
+                                <path
+                                  d="m2.25 6.25 2.25 2.25 5.25-5"
+                                  stroke="currentColor"
+                                  strokeWidth="1.75"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </span>
+                            <span className="truncate">{cat.name}</span>
                           </label>
                         );
                       })}

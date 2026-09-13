@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -19,30 +19,39 @@ const CategoryReviews = ({ productSlug }) => {
   const [message, setMessage] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState("");
+  const mountedRef = useRef(false);
 
   const loadReviews = async (nextPage = 1) => {
+    if (!mountedRef.current) return;
     setLoading(true);
     try {
       const response = await fetch(`/api/reviews?productSlug=${encodeURIComponent(productSlug)}&page=${nextPage}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to load reviews");
+      if (!mountedRef.current) return;
       setReviews((current) => (nextPage === 1 ? data.reviews : [...current, ...data.reviews]));
       setAverageRating(data.averageRating || 0);
       setHasMore(data.hasMore);
       setPage(nextPage);
     } catch (error) {
-      setMessage(error.message);
+      if (mountedRef.current) setMessage(error.message);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     loadReviews();
     supabase.auth.getSession().then(({ data }) => {
+      if (!mountedRef.current) return;
       setIsLoggedIn(Boolean(data.session));
       setCurrentUserId(data.session?.user?.id || "");
     });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [productSlug]);
 
   const submitReview = async (event) => {

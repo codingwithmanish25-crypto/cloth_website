@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 const ProductInfo = ({ product }) => {
   const [selectedSize, setSelectedSize] = useState(product?.sizes?.[0] || 'M');
   const { addToCart } = useCart();
-  const isSoldOut = Boolean(product?.isSoldOut);
+  const isSoldOut = Boolean(product?.isSoldOut) || Number(product?.stock) <= 0;
   const [coupons, setCoupons] = useState([]);
   const [copiedCode, setCopiedCode] = useState("");
 
@@ -60,6 +60,9 @@ const ProductInfo = ({ product }) => {
           )}
         </div>
         <p className="text-xs text-zinc-400 mt-1">Inclusive of all taxes.</p>
+        <p className={`text-xs mt-2 font-semibold ${isSoldOut ? 'text-red-400' : 'text-emerald-400'}`}>
+          {isSoldOut ? 'Out of Stock' : `${product.stock} available`}
+        </p>
       </div>
 
       {/* Size Selector */}

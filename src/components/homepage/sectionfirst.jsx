@@ -1,14 +1,14 @@
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
 
 const SectionFirst = () => {
   const categories = [
     {
       id: 1,
       title: "OVERSIZED T-SHIRTS",
-      href: "/category/men/shirts",
-      desktopImg: "/homesection/resize-dek-freedomgraft.webp", 
+      href: "/shop_by_category?fit=OVERSIZED%20FIT",
+      desktopImg: "/homesection/resize-dek-freedomgraft.webp",
       mobileImg: "/homesection/FREEDOM-MOB-RESIZE.webp",
     },
     {
@@ -49,7 +49,6 @@ const SectionFirst = () => {
           href={item.href}
           className="relative w-full h-[85vh] md:h-screen block overflow-hidden group cursor-pointer"
         >
-    
           <div className="hidden md:block w-full h-full relative">
             <Image
               src={item.desktopImg}
@@ -61,7 +60,6 @@ const SectionFirst = () => {
             />
           </div>
 
-      
           <div className="block md:hidden w-full h-full relative">
             <Image
               src={item.mobileImg}
@@ -73,17 +71,16 @@ const SectionFirst = () => {
             />
           </div>
 
-          
           <div className="absolute inset-0 flex items-center justify-start p-8 md:p-16 z-20">
-              <div className="max-w-md">
-                <h2 className="text-white text-3xl md:text-5xl font-black tracking-widest uppercase drop-shadow-md">
-                  {item.title}
-                </h2>
-                <p className="text-zinc-200 text-sm font-bold tracking-wider mt-2 underline underline-offset-4">
-                  SHOP NOW
-                </p>
-              </div>
+            <div className="max-w-md">
+              <h2 className="text-white text-3xl md:text-5xl font-black tracking-widest uppercase drop-shadow-md">
+                {item.title}
+              </h2>
+              <p className="text-zinc-200 text-sm font-bold tracking-wider mt-2 underline underline-offset-4">
+                SHOP NOW
+              </p>
             </div>
+          </div>
         </Link>
       ))}
     </section>

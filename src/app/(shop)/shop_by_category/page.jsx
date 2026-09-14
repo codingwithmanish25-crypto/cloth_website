@@ -1,11 +1,13 @@
-import ShopByCategory from '@/components/shopByCategory/shopByCategory'
+import ShopByCategory from "@/components/shopByCategory/shopByCategory";
 
-const ShopByCategoryPage = () => {
+const ShopByCategoryPage = async ({ searchParams }) => {
+  const params = await searchParams;
+
   return (
     <div>
-      <ShopByCategory />
+      <ShopByCategory initialFit={params?.fit || ""} />
     </div>
-  )
-}
+  );
+};
 
-export default ShopByCategoryPage
+export default ShopByCategoryPage;

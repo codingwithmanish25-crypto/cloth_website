@@ -26,6 +26,7 @@ model Product {
   fitTag         String?   @map("fit_tag")
   description    String?
   collectionSlugs String[]  @default([]) @map("collection_slugs")
+  stock          Int        @default(1)
   isSoldOut      Boolean   @default(false) @map("is_sold_out")
   availableSizes String[]  @map("available_sizes")
   images         String[]
@@ -91,6 +92,17 @@ model NewsletterSubscriber {
 
   @@index([subscribedAt])
   @@map("newsletter_subscribers")
+}
+
+model ContactMessage {
+  id        BigInt   @id @default(autoincrement())
+  email     String
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt])
+  @@map("contact_messages")
 }
 
 model Order {

@@ -17,6 +17,7 @@ const ProductCard = ({ product, priority = false }) => {
     mrp,
     fitTag,
     isSoldOut = false,
+    stock = 0,
     image,
     images,
     slug,
@@ -101,7 +102,7 @@ const ProductCard = ({ product, priority = false }) => {
 
         {/* Badges */}
         <div className="absolute top-2 left-2 right-2 flex justify-between items-center text-[10px] sm:text-xs font-bold tracking-wider z-10 pointer-events-none">
-          {isSoldOut ? (
+          {isSoldOut || Number(stock) <= 0 ? (
             <span className="bg-black/80 text-zinc-300 px-2 py-0.5 uppercase tracking-widest">
               SOLD OUT
             </span>

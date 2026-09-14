@@ -27,6 +27,10 @@ export async function POST(req) {
         ? BigInt(body.categoryId)
         : null
       : null;
+    const stock = Number(body.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      return NextResponse.json({ error: "Stock must be a whole number greater than or equal to 0" }, { status: 400 });
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -35,10 +39,11 @@ export async function POST(req) {
         category: categoryId ? { connect: { id: categoryId } } : undefined,
         price: Number(body.price),
         originalPrice: body.originalPrice ? Number(body.originalPrice) : null,
+        stock,
         fitTag: body.fitTag || null,
         description: body.description || null,
         collectionSlugs: Array.isArray(body.collectionSlugs) ? body.collectionSlugs : [],
-        isSoldOut: Boolean(body.isSoldOut),
+        isSoldOut: stock === 0 || Boolean(body.isSoldOut),
         availableSizes: body.availableSizes,
         images: body.images,
       },
@@ -96,6 +101,7 @@ export async function GET(req) {
         originalPrice: true,
         fitTag: true,
         collectionSlugs: true,
+        stock: true,
         isSoldOut: true,
         availableSizes: true,
         images: true,

@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { WEBSITE_CATEGORY_ROWS } from "@/lib/websiteCategories";
 
+function getCategoryGroup(slug) {
+  const staticCategory = WEBSITE_CATEGORY_ROWS.find((item) => item.slug === slug);
+  if (staticCategory) return staticCategory.group;
+
+  const group = String(slug).split("-")[0]?.toUpperCase();
+  return ["MEN", "WOMEN", "FOOTWEAR", "ACCESSORIES"].includes(group)
+    ? group
+    : "OTHER";
+}
+
 // GET All Categories
 export async function GET() {
   try {
@@ -29,7 +39,7 @@ export async function GET() {
       id: cat.id.toString(),
       name: cat.name,
       slug: cat.slug,
-      group: WEBSITE_CATEGORY_ROWS.find((item) => item.slug === cat.slug)?.group || "OTHER",
+      group: getCategoryGroup(cat.slug),
       productCount: cat._count.products,
     }));
 

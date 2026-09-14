@@ -9,12 +9,13 @@ const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
-export const prisma =
-  (globalForPrisma.prisma
-    ? globalForPrisma.prisma
-    : new PrismaClient({
-        adapter,
-      }));
+const cachedPrisma = globalForPrisma.prisma;
+const hasCurrentSchema =
+  cachedPrisma && typeof cachedPrisma.contactMessage?.findMany === "function";
+
+export const prisma = hasCurrentSchema
+  ? cachedPrisma
+  : new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

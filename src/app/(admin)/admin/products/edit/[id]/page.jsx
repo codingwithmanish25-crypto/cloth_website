@@ -22,6 +22,7 @@ export default function EditProductPage({ params }) {
     collectionSlugs: [],
     price: "",
     originalPrice: "",
+    stock: "1",
     fitTag: "RELAXED FIT",
     description: "",
     isSoldOut: false,
@@ -59,6 +60,7 @@ export default function EditProductPage({ params }) {
             collectionSlugs: Array.isArray(data.collectionSlugs) ? data.collectionSlugs : [],
             price: String(hasOriginalPrice ? Math.min(loadedPrice, loadedOriginalPrice) : loadedPrice),
             originalPrice: hasOriginalPrice ? String(Math.max(loadedPrice, loadedOriginalPrice)) : "",
+            stock: String(data.stock ?? 0),
             fitTag: data.fitTag || "RELAXED FIT",
             description: data.description || "",
             isSoldOut: data.isSoldOut || false,
@@ -186,6 +188,7 @@ export default function EditProductPage({ params }) {
           collectionSlugs: formData.collectionSlugs,
           price: Number(formData.price),
           originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
+          stock: Number(formData.stock),
           fitTag: formData.fitTag,
           description: formData.description,
           isSoldOut: formData.isSoldOut,
@@ -339,6 +342,20 @@ export default function EditProductPage({ params }) {
                 onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Available Stock *</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                required
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              />
+              <p className="text-[10px] text-zinc-500 mt-1">Set 0 to mark this product Out of Stock.</p>
             </div>
           </div>
 

@@ -92,6 +92,7 @@ export default function AdminProductsPage() {
               <tr>
                 <th className="py-3 px-4">Product</th>
                 <th className="py-3 px-4">Price</th>
+                <th className="py-3 px-4">Stock</th>
                 <th className="py-3 px-4">Fit / Stock Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -116,6 +117,12 @@ export default function AdminProductsPage() {
                   {/* Price */}
                   <td className="py-3 px-4 text-zinc-300">
                     ₹{product.price}
+                  </td>
+
+                  <td className="py-3 px-4">
+                    <span className={Number(product.stock) > 0 ? "text-emerald-400" : "text-red-400"}>
+                      {Number(product.stock) > 0 ? `${product.stock} left` : "Out of Stock"}
+                    </span>
                   </td>
 
                   {/* Fit Tag & Sold Out Toggle */}

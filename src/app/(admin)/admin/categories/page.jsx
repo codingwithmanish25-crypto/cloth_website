@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Check, X, FolderTree, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Check, X, FolderTree, Loader2, ChevronRight, Package } from "lucide-react";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -11,8 +11,21 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [editingGroup, setEditingGroup] = useState("MEN");
+  const [selectedGroup, setSelectedGroup] = useState("MEN");
 
   const groups = ["MEN", "WOMEN", "FOOTWEAR", "ACCESSORIES"];
+  const groupedCategories = groups.map((group) => {
+    const groupCategories = categories.filter((category) => category.group === group);
+    return {
+      group,
+      categories: groupCategories,
+      productCount: groupCategories.reduce(
+        (total, category) => total + Number(category.productCount || 0),
+        0
+      ),
+    };
+  });
+  const activeGroup = groupedCategories.find((item) => item.group === selectedGroup) || groupedCategories[0];
   const slugify = (value) =>
     value
       .toLowerCase()
@@ -153,119 +166,117 @@ export default function CategoriesPage() {
         </button>
       </form>
 
-      {/* CATEGORIES TABLE */}
-      <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left text-xs text-zinc-300">
-          <thead className="bg-zinc-900/80 uppercase text-[10px] text-zinc-400 font-semibold tracking-wider border-b border-zinc-800">
-            <tr>
-              <th className="py-3.5 px-4">Category Name</th>
-              <th className="py-3.5 px-4">Group</th>
-              <th className="py-3.5 px-4">Slug</th>
-              <th className="py-3.5 px-4">Products</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800/60">
-            {loading ? (
-              <tr>
-                <td colSpan="5" className="py-8 text-center text-zinc-500">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                    Loading categories...
+      {loading ? (
+        <div className="py-8 text-center text-zinc-500">
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+            Loading categories...
+          </div>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="py-8 text-center text-zinc-500">No categories found. Create one above!</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {groupedCategories.slice(0, 2).map(({ group, categories: groupCategories, productCount }) => (
+              <button
+                key={group}
+                type="button"
+                onClick={() => setSelectedGroup(group)}
+                className={`text-left p-5 rounded-xl border transition-colors ${
+                  selectedGroup === group
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Main Category</p>
+                    <h3 className="mt-1 text-xl font-bold text-white">{group}</h3>
                   </div>
-                </td>
-              </tr>
-            ) : categories.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="py-8 text-center text-zinc-500">
-                  No categories found. Create one above!
-                </td>
-              </tr>
-            ) : (
-              categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-zinc-900/30 transition-colors">
-                  <td className="py-3.5 px-4 font-medium text-white">
-                    {editingId === cat.id ? (
+                  <ChevronRight className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="mt-5 flex items-end justify-between">
+                  <div>
+                    <p className="text-3xl font-bold text-emerald-400">{productCount}</p>
+                    <p className="text-xs text-zinc-400">Total products</p>
+                  </div>
+                  <p className="text-xs text-zinc-500">{groupCategories.length} subcategories</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <div className="flex items-end justify-between mb-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Subcategories</p>
+                <h3 className="text-lg font-bold text-white">{activeGroup?.group || "Categories"}</h3>
+              </div>
+              <span className="text-xs text-zinc-500">Products assigned to each category</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(activeGroup?.categories || []).map((cat) => (
+                <div key={cat.id} className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4">
+                  {editingId === cat.id ? (
+                    <div className="space-y-3">
                       <input
                         type="text"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
-                        className="bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                        className="w-full bg-zinc-950 border border-emerald-500 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                       />
-                    ) : (
-                      cat.name
-                    )}
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    {editingId === cat.id ? (
                       <select
                         value={editingGroup}
                         onChange={(e) => setEditingGroup(e.target.value)}
-                        className="bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                        className="w-full bg-zinc-950 border border-emerald-500 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                       >
                         {groups.map((group) => <option key={group}>{group}</option>)}
                       </select>
-                    ) : (
-                      <span className="text-emerald-400">{cat.group}</span>
-                    )}
-                  </td>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-semibold text-white">{cat.name}</h4>
+                        <p className="mt-1 text-[10px] font-mono text-zinc-500">{cat.slug}</p>
+                      </div>
+                      <Package className="w-4 h-4 text-emerald-400 shrink-0" />
+                    </div>
+                  )}
 
-                  <td className="py-3.5 px-4 font-mono text-zinc-400">
-                    {cat.slug}
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium">
-                      {cat.productCount ?? 0} Items
+                  <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
+                    <span className="text-sm font-semibold text-zinc-200">
+                      {cat.productCount ?? 0} <span className="text-xs font-normal text-zinc-500">products</span>
                     </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center gap-2">
                       {editingId === cat.id ? (
                         <>
-                          <button
-                            onClick={() => handleSaveEdit(cat.id)}
-                            className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded transition-colors"
-                            title="Save"
-                          >
+                          <button type="button" onClick={() => handleSaveEdit(cat.id)} className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded" title="Save">
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded transition-colors"
-                            title="Cancel"
-                          >
+                          <button type="button" onClick={() => setEditingId(null)} className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded" title="Cancel">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </>
                       ) : (
                         <>
-                          <button
-                            onClick={() => handleStartEdit(cat)}
-                            className="p-1.5 bg-zinc-800/60 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded transition-colors"
-                            title="Edit"
-                          >
+                          <button type="button" onClick={() => handleStartEdit(cat)} className="p-1.5 bg-zinc-800/60 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded" title="Edit">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900/60 rounded transition-colors"
-                            title="Delete"
-                          >
+                          <button type="button" onClick={() => handleDeleteCategory(cat.id)} className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900/60 rounded" title="Delete">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

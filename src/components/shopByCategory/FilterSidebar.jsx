@@ -1,23 +1,38 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, RotateCcw, Check, ArrowUpDown } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  Check,
+  ArrowUpDown,
+} from "lucide-react";
 import { WEBSITE_CATEGORY_ROWS } from "@/lib/websiteCategories";
 
-const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
+const FilterSidebar = ({
+  onFilterChange,
+  initialCategory = "",
+  initialFit = "",
+}) => {
   const categories = WEBSITE_CATEGORY_ROWS;
-  const categoryGroups = [...new Set(categories.map((category) => category.group))];
+  const categoryGroups = [
+    ...new Set(categories.map((category) => category.group)),
+  ];
   const [selectedCategory, setSelectedCategory] = useState(
-    initialCategory ? [initialCategory] : []
+    initialCategory ? [initialCategory] : [],
   );
-  const [selectedFit, setSelectedFit] = useState([]);
+  const [selectedFit, setSelectedFit] = useState(
+    initialFit ? [initialFit] : [],
+  );
   const [selectedSize, setSelectedSize] = useState([]);
   const [priceRange, setPriceRange] = useState(50000);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("recommended");
   const [openCategoryGroup, setOpenCategoryGroup] = useState(
     initialCategory
-      ? categories.find((category) => category.slug === initialCategory)?.group || "MEN"
-      : "MEN"
+      ? categories.find((category) => category.slug === initialCategory)
+          ?.group || "MEN"
+      : "MEN",
   );
 
   const [openSections, setOpenSections] = useState({
@@ -60,7 +75,14 @@ const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
         inStockOnly,
       });
     }
-  }, [sortBy, selectedCategory, selectedFit, selectedSize, priceRange, inStockOnly]);
+  }, [
+    sortBy,
+    selectedCategory,
+    selectedFit,
+    selectedSize,
+    priceRange,
+    inStockOnly,
+  ]);
 
   const fits = ["RELAXED FIT", "OVERSIZED FIT", "REGULAR FIT", "SLIM FIT"];
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -203,19 +225,26 @@ const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
         {openSections.category && (
           <div className="mt-3 space-y-2">
             {categoryGroups.map((group) => {
-              const groupCategories = categories.filter((category) => category.group === group);
+              const groupCategories = categories.filter(
+                (category) => category.group === group,
+              );
               const selectedCount = groupCategories.filter((category) =>
-                selectedCategory.includes(category.slug)
+                selectedCategory.includes(category.slug),
               ).length;
               const isOpen = openCategoryGroup === group;
 
               return (
-                <div key={group} className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/50">
+                <div
+                  key={group}
+                  className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/50"
+                >
                   <button
                     type="button"
                     onClick={() => setOpenCategoryGroup(isOpen ? null : group)}
                     className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-xs font-bold tracking-wide transition-colors ${
-                      isOpen ? "text-emerald-400 bg-emerald-500/10" : "text-zinc-300 hover:text-white hover:bg-zinc-900"
+                      isOpen
+                        ? "text-emerald-400 bg-emerald-500/10"
+                        : "text-zinc-300 hover:text-white hover:bg-zinc-900"
                     }`}
                   >
                     <span>{group}</span>
@@ -225,7 +254,11 @@ const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
                           {selectedCount}
                         </span>
                       )}
-                      {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      {isOpen ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
                     </span>
                   </button>
 
@@ -237,14 +270,20 @@ const FilterSidebar = ({ onFilterChange, initialCategory = "" }) => {
                           <label
                             key={cat.slug}
                             className={`flex items-center gap-2 rounded-md px-2 py-2 text-[11px] cursor-pointer transition-colors ${
-                              checked ? "bg-emerald-500/10 text-emerald-300" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                              checked
+                                ? "bg-emerald-500/10 text-emerald-300"
+                                : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() =>
-                                handleCheckboxChange(cat.slug, selectedCategory, setSelectedCategory)
+                                handleCheckboxChange(
+                                  cat.slug,
+                                  selectedCategory,
+                                  setSelectedCategory,
+                                )
                               }
                               className="peer sr-only"
                             />

@@ -26,22 +26,22 @@ const Sectionthird = () => {
   const [fitTags, setFitTags] = useState([]);
   const [activeFit, setActiveFit] = useState("");
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const loadFitTags = async () => {
       try {
         const response = await fetch("/api/products?fitTags=true");
         const data = await response.json();
-        if (response.ok) {
-          setFitTags(data);
-          setActiveFit(data[0] || "");
-        }
+        if (!response.ok || !Array.isArray(data))
+          throw new Error("Failed to load fit types");
+        setFitTags(data);
+        setActiveFit(data[0] || "");
       } catch (error) {
-        console.error("Failed to load homepage filters:", error);
+        console.error("Failed to load homepage fit types:", error);
       }
     };
 
@@ -54,15 +54,17 @@ const Sectionthird = () => {
     const loadProducts = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ page: "1", limit: String(PAGE_SIZE) });
+        const params = new URLSearchParams({
+          page: "1",
+          limit: String(PAGE_SIZE),
+        });
         if (activeFit) params.set("fitTag", activeFit);
         const response = await fetch(`/api/products?${params}`);
         const data = await response.json();
-        if (response.ok) {
-          setProducts(data.products || []);
-          setPage(1);
-          setHasMore(Boolean(data.hasMore));
-        }
+        if (!response.ok) throw new Error("Failed to load fit products");
+        setProducts(data.products || []);
+        setPage(1);
+        setHasMore(Boolean(data.hasMore));
       } catch (error) {
         console.error("Failed to load homepage products:", error);
       } finally {
@@ -77,15 +79,17 @@ const Sectionthird = () => {
     const nextPage = page + 1;
     setLoadingMore(true);
     try {
-      const params = new URLSearchParams({ page: String(nextPage), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({
+        page: String(nextPage),
+        limit: String(PAGE_SIZE),
+      });
       if (activeFit) params.set("fitTag", activeFit);
       const response = await fetch(`/api/products?${params}`);
       const data = await response.json();
-      if (response.ok) {
-        setProducts((current) => [...current, ...(data.products || [])]);
-        setPage(nextPage);
-        setHasMore(Boolean(data.hasMore));
-      }
+      if (!response.ok) throw new Error("Failed to load more products");
+      setProducts((current) => [...current, ...(data.products || [])]);
+      setPage(nextPage);
+      setHasMore(Boolean(data.hasMore));
     } catch (error) {
       console.error("Failed to load more homepage products:", error);
     } finally {
@@ -95,13 +99,13 @@ const Sectionthird = () => {
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 overflow-x-auto pb-6 border-b border-zinc-800 mb-8">
+      <div className="mb-8 flex items-center gap-3 overflow-x-auto border-b border-zinc-800 pb-6">
         {fitTags.map((fitTag) => (
           <button
             key={fitTag}
             type="button"
             onClick={() => setActiveFit(fitTag)}
-            className={`whitespace-nowrap border px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all duration-200 ${
+            className={`whitespace-nowrap border px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
               activeFit === fitTag
                 ? "border-white bg-white text-black"
                 : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-emerald-400"
@@ -110,6 +114,11 @@ const Sectionthird = () => {
             {fitTag}
           </button>
         ))}
+      </div>
+      <div className="mb-6">
+        <h2 className="text-xl font-black uppercase tracking-widest text-zinc-100">
+          Shop By Fit
+        </h2>
       </div>
 
       {loading ? (
@@ -137,10 +146,11 @@ const Sectionthird = () => {
               </button>
             </div>
           )}
-          {loadingMore && <div className="mt-8"><ProductSkeletonGrid /></div>}
         </>
       ) : (
-        <p className="py-16 text-center text-sm text-zinc-500">No products found.</p>
+        <p className="py-16 text-center text-sm text-zinc-500">
+          No products found.
+        </p>
       )}
     </section>
   );

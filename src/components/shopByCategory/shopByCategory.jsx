@@ -21,7 +21,11 @@ const ProductSkeletonGrid = () => (
   </div>
 );
 
-const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
+const ShopByCategory = ({
+  initialCategory = "",
+  initialCollection = "",
+  initialFit = "",
+}) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -29,7 +33,7 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
   const [filters, setFilters] = useState({
     sortBy: "recommended",
     category: initialCategory ? [initialCategory] : [],
-    fit: [],
+    fit: initialFit ? [initialFit] : [],
     size: [],
     maxPrice: 50000,
     inStockOnly: false,
@@ -89,14 +93,16 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
         const categorySlug = String(
           typeof product.category === "object"
             ? product.category?.slug || ""
-            : product.category || ""
+            : product.category || "",
         )
           .toLowerCase()
           .trim();
 
         if (filters.category && filters.category.length > 0) {
           const matchesCategory = filters.category.some((cat) => {
-            const normalizedSelected = String(cat || "").toLowerCase().trim();
+            const normalizedSelected = String(cat || "")
+              .toLowerCase()
+              .trim();
             return categorySlug === normalizedSelected;
           });
           if (!matchesCategory) return false;
@@ -118,7 +124,7 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
 
         if (filters.fit && filters.fit.length > 0) {
           const matchesFit = filters.fit.some(
-            (f) => f.toLowerCase().trim() === productFit
+            (f) => f.toLowerCase().trim() === productFit,
           );
           if (!matchesFit) return false;
         }
@@ -128,13 +134,13 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
           Array.isArray(product.availableSizes)
             ? product.availableSizes
             : Array.isArray(product.sizes)
-            ? product.sizes
-            : []
+              ? product.sizes
+              : []
         ).map((s) => s.toString().toUpperCase().trim());
 
         if (filters.size && filters.size.length > 0) {
           const matchesSize = filters.size.some((s) =>
-            sizesList.includes(s.toUpperCase().trim())
+            sizesList.includes(s.toUpperCase().trim()),
           );
           if (!matchesSize) return false;
         }
@@ -196,6 +202,7 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
           <FilterSidebar
             onFilterChange={handleFilterChange}
             initialCategory={initialCategory}
+            initialFit={initialFit}
           />
         </div>
 
@@ -225,6 +232,7 @@ const ShopByCategory = ({ initialCategory = "", initialCollection = "" }) => {
               <FilterSidebar
                 onFilterChange={handleFilterChange}
                 initialCategory={initialCategory}
+                initialFit={initialFit}
               />
             </div>
           </div>

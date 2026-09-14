@@ -105,7 +105,11 @@ const Cart = () => {
           },
           body: JSON.stringify({ items: cartItems.map(({ id, title, price, quantity, size }) => ({ id, title, price, quantity, size })), subtotal, discount, total, address: selectedAddress, paymentId: result.razorpay_payment_id }),
         });
-        if (!response.ok) { setCheckoutError("Payment succeeded but order could not be saved. Contact support."); return; }
+        if (!response.ok) {
+          const orderError = await response.json().catch(() => ({}));
+          setCheckoutError(orderError.error || "Payment succeeded but order could not be saved. Contact support.");
+          return;
+        }
         setIsCheckoutOpen(false); closeCart(); alert("Payment successful. Your order is pending confirmation.");
       }, theme: { color: "#f97316" } });
       payment.open();
@@ -182,12 +186,17 @@ const Cart = () => {
                           {item.quantity}
                         </span>
                         <button
+                          disabled={Number(item.stock) <= item.quantity}
                           onClick={() => updateQuantity(item.cartItemId || item.id, 1)}
-                          className="px-1.5 py-0.5 text-zinc-400 hover:text-white"
+                          className="px-1.5 py-0.5 text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
+
+                      {Number(item.stock) <= item.quantity && (
+                        <span className="text-[10px] text-amber-400">Max available</span>
+                      )}
 
                       <span className="text-sm font-bold text-white">
                         ₹ {(Number(item.price) * item.quantity).toLocaleString("en-IN")}.00

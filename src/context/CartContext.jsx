@@ -15,6 +15,7 @@ export const CartProvider = ({ children }) => {
   const closeCart = () => setIsCartOpen(false);
 
   const addToCart = (product, selectedSize) => {
+    if (Number(product.stock) <= 0 || product.isSoldOut) return false;
     // Standardize unique ID per product variant (ID + Size)
     const size = selectedSize || product.size || "Free Size";
     const key = `${product.id}-${size}`;
@@ -29,6 +30,8 @@ export const CartProvider = ({ children }) => {
       );
 
       if (existingItemIndex > -1) {
+        const existingItem = prevItems[existingItemIndex];
+        if (existingItem.quantity >= Number(product.stock)) return prevItems;
         return prevItems.map((item, index) =>
           index === existingItemIndex
               ? { ...item, price: salePrice, image, quantity: item.quantity + 1 }
@@ -50,6 +53,7 @@ export const CartProvider = ({ children }) => {
     });
 
     openCart();
+    return true;
   };
 
   const updateQuantity = (cartItemId, delta) => {
@@ -58,6 +62,7 @@ export const CartProvider = ({ children }) => {
         .map((item) => {
           if (item.cartItemId === cartItemId || item.id === cartItemId) {
             const newQty = item.quantity + delta;
+            if (delta > 0 && newQty > Number(item.stock)) return item;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
           return item;

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, MessageSquare, Send, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  Send,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { z } from "zod";
 
 // Zod Validation Schema
@@ -25,6 +31,7 @@ const Contact = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Handle Input Changes
   const handleChange = (e) => {
@@ -38,7 +45,7 @@ const Contact = () => {
   };
 
   // Submit Handler with Zod Validation
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const result = contactSchema.safeParse(formData);
@@ -55,19 +62,30 @@ const Contact = () => {
 
     // Success State
     setErrors({});
-    setIsSubmitted(true);
-    setFormData({ email: "", message: "" });
+    setIsSending(true);
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result.data),
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Could not send your message");
+      setIsSubmitted(true);
+      setFormData({ email: "", message: "" });
 
-    // Hide success message after 4 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-    }, 4000);
+      setTimeout(() => setIsSubmitted(false), 4000);
+    } catch (error) {
+      setErrors({ form: error.message });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#0a0a0a] text-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="w-full max-w-lg bg-[#121212] border border-[#27272a] rounded-2xl p-6 sm:p-8 shadow-2xl relative">
-        
         {/* Header */}
         <div className="text-center pb-6 border-b border-[#27272a]">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
@@ -85,13 +103,18 @@ const Contact = () => {
             <span>Thank you! Your message has been sent successfully.</span>
           </div>
         )}
+        {errors.form && (
+          <p className="mt-4 text-xs text-red-400">{errors.form}</p>
+        )}
 
         {/* Contact Form */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          
           {/* Email Field */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+            <label
+              htmlFor="email"
+              className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
+            >
               Email Address
             </label>
             <div className="relative">
@@ -120,7 +143,10 @@ const Contact = () => {
 
           {/* Message Field */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="message" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+            <label
+              htmlFor="message"
+              className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
+            >
               Message
             </label>
             <div className="relative">
@@ -150,13 +176,13 @@ const Contact = () => {
           {/* Submit Button */}
           <button
             type="submit"
+            disabled={isSending}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#10b981] text-black font-semibold text-sm hover:bg-[#0ea5e9] transition-all cursor-pointer shadow-md active:scale-[0.99] mt-2"
           >
             <Send className="w-4 h-4" />
-            Send Message
+            {isSending ? "Sending..." : "Send Message"}
           </button>
         </form>
-
       </div>
     </div>
   );

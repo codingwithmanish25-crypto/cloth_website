@@ -25,6 +25,11 @@ export async function PATCH(request) {
     if (authUser?.user_metadata?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const { id, status } = await request.json();
     if (!["PENDING", "PROCESSING", "DELIVERED", "CANCELLED"].includes(status)) return NextResponse.json({ error: "Invalid order status" }, { status: 400 });
+    const currentOrder = await prisma.order.findUnique({ where: { id: BigInt(id) }, select: { status: true, cancelledBy: true } });
+    if (!currentOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    if (currentOrder.status === "CANCELLED" && currentOrder.cancelledBy === "CUSTOMER") {
+      return NextResponse.json({ error: "Customer-cancelled orders cannot be changed" }, { status: 409 });
+    }
     const order = await prisma.order.update({
       where: { id: BigInt(id) },
       data: {

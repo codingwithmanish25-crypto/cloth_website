@@ -17,6 +17,7 @@ export default function AddProductPage() {
     collectionSlugs: [],
     price: "",
     originalPrice: "",
+    stock: "1",
     fitTag: "RELAXED FIT",
     description: "",
     isSoldOut: false,
@@ -139,7 +140,10 @@ export default function AddProductPage() {
           categoryId: formData.categoryId || null,
           collectionSlugs: formData.collectionSlugs,
           price: Number(formData.price),
-          originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
+          originalPrice: formData.originalPrice
+            ? Number(formData.originalPrice)
+            : null,
+          stock: Number(formData.stock),
           fitTag: formData.fitTag,
           description: formData.description,
           isSoldOut: formData.isSoldOut,
@@ -164,6 +168,7 @@ export default function AddProductPage() {
         collectionSlugs: [],
         price: "",
         originalPrice: "",
+        stock: "1",
         fitTag: "RELAXED FIT",
         description: "",
         isSoldOut: false,
@@ -193,7 +198,9 @@ export default function AddProductPage() {
           </Link>
           <div>
             <h2 className="text-xl font-bold text-white">Add New Product</h2>
-            <p className="text-xs text-zinc-400">Fill in details matching your schema.</p>
+            <p className="text-xs text-zinc-400">
+              Fill in details matching your schema.
+            </p>
           </div>
         </div>
 
@@ -207,12 +214,18 @@ export default function AddProductPage() {
         </button>
       </div>
 
-      <form id="add-product-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <form
+        id="add-product-form"
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      >
         {/* Left Column - Main Details */}
         <div className="md:col-span-2 space-y-5">
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Product Title *</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Product Title *
+              </label>
               <input
                 type="text"
                 required
@@ -224,23 +237,31 @@ export default function AddProductPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">URL Slug</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                URL Slug
+              </label>
               <input
                 type="text"
                 required
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, slug: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Description</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Description
+              </label>
               <textarea
                 rows={4}
                 placeholder="High quality relaxed fit t-shirt made with 100% premium cotton."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -249,36 +270,70 @@ export default function AddProductPage() {
           {/* Pricing Details */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Sale Price (₹) *</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Sale Price (₹) *
+              </label>
               <input
                 type="number"
                 required
                 placeholder="1599"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Original Price (M.R.P ₹)</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Original Price (M.R.P ₹)
+              </label>
               <input
                 type="number"
                 placeholder="1999"
                 value={formData.originalPrice}
-                onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, originalPrice: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Available Stock *
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                required
+                placeholder="2"
+                value={formData.stock}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: e.target.value })
+                }
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              />
+              <p className="text-[10px] text-zinc-500 mt-1">
+                Product automatically shows Out of Stock when this reaches 0.
+              </p>
             </div>
           </div>
 
           {/* Media Upload */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-3">
-            <label className="block text-xs font-semibold text-zinc-300 uppercase">Product Images</label>
+            <label className="block text-xs font-semibold text-zinc-300 uppercase">
+              Product Images
+            </label>
 
             <div className="grid grid-cols-4 gap-3">
               {formData.images.map((img, idx) => (
-                <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 group">
+                <div
+                  key={idx}
+                  className="relative aspect-[3/4] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 group"
+                >
                   <Image
                     src={img}
                     alt="preview"
@@ -298,8 +353,16 @@ export default function AddProductPage() {
 
               <label className="aspect-[3/4] border-2 border-dashed border-zinc-800 hover:border-emerald-500/50 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors bg-zinc-950/50">
                 <Upload className="w-5 h-5 text-zinc-400 mb-1" />
-                <span className="text-[10px] text-zinc-400 font-medium">Upload</span>
-                <input type="file" multiple accept="image/*" onChange={handleImageSelect} className="hidden" />
+                <span className="text-[10px] text-zinc-400 font-medium">
+                  Upload
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
               </label>
             </div>
           </div>
@@ -309,10 +372,14 @@ export default function AddProductPage() {
         <div className="space-y-5">
           {/* Category Dropdown Selection */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-2">
-            <label className="block text-xs font-semibold text-zinc-300 uppercase">Category</label>
+            <label className="block text-xs font-semibold text-zinc-300 uppercase">
+              Category
+            </label>
             <select
               value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, categoryId: e.target.value })
+              }
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="">Select Category (Optional)</option>
@@ -332,7 +399,10 @@ export default function AddProductPage() {
               {WEBSITE_COLLECTIONS.map(([name, slug]) => {
                 const selected = formData.collectionSlugs.includes(slug);
                 return (
-                  <label key={slug} className="flex items-center gap-3 text-xs text-zinc-300 cursor-pointer">
+                  <label
+                    key={slug}
+                    className="flex items-center gap-3 text-xs text-zinc-300 cursor-pointer"
+                  >
                     <input
                       type="checkbox"
                       checked={selected}
@@ -340,7 +410,9 @@ export default function AddProductPage() {
                         setFormData((prev) => ({
                           ...prev,
                           collectionSlugs: selected
-                            ? prev.collectionSlugs.filter((item) => item !== slug)
+                            ? prev.collectionSlugs.filter(
+                                (item) => item !== slug,
+                              )
                             : [...prev.collectionSlugs, slug],
                         }))
                       }
@@ -356,10 +428,14 @@ export default function AddProductPage() {
           {/* Fit Tag & Availability */}
           <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">Fit Tag</label>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase mb-2">
+                Fit Tag
+              </label>
               <select
                 value={formData.fitTag}
-                onChange={(e) => setFormData({ ...formData, fitTag: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, fitTag: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="RELAXED FIT">RELAXED FIT</option>
@@ -370,11 +446,15 @@ export default function AddProductPage() {
             </div>
 
             <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-300 uppercase">Sold Out Status</span>
+              <span className="text-xs font-semibold text-zinc-300 uppercase">
+                Sold Out Status
+              </span>
               <input
                 type="checkbox"
                 checked={formData.isSoldOut}
-                onChange={(e) => setFormData({ ...formData, isSoldOut: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isSoldOut: e.target.checked })
+                }
                 className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
               />
             </div>

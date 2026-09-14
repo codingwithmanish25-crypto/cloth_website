@@ -6,8 +6,8 @@ function serializeProduct(product) {
   if (!product) return null;
   return JSON.parse(
     JSON.stringify(product, (key, value) =>
-      typeof value === "bigint" ? value.toString() : value
-    )
+      typeof value === "bigint" ? value.toString() : value,
+    ),
   );
 }
 
@@ -28,7 +28,10 @@ export async function GET(req, { params }) {
     const identifier = resolvedParams?.id;
 
     if (!identifier) {
-      return NextResponse.json({ message: "Identifier is required" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Identifier is required" },
+        { status: 400 },
+      );
     }
 
     const decodedIdentifier = decodeURIComponent(identifier).trim();
@@ -39,6 +42,7 @@ export async function GET(req, { params }) {
       try {
         product = await prisma.product.findUnique({
           where: { id: BigInt(decodedIdentifier) },
+          include: { category: { select: { slug: true, name: true } } },
         });
       } catch (e) {
         // Fallthrough if BigInt parsing fails
@@ -51,6 +55,7 @@ export async function GET(req, { params }) {
         where: {
           slug: { equals: decodedIdentifier, mode: "insensitive" },
         },
+        include: { category: { select: { slug: true, name: true } } },
       });
     }
 
@@ -64,13 +69,14 @@ export async function GET(req, { params }) {
             { title: { contains: cleanKeyword, mode: "insensitive" } },
           ],
         },
+        include: { category: { select: { slug: true, name: true } } },
       });
     }
 
     if (!product) {
       return NextResponse.json(
         { message: `Product not found for: ${identifier}` },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -98,6 +104,17 @@ export async function PATCH(req, { params }) {
     const dataToUpdate = {};
     if (body.isSoldOut !== undefined) dataToUpdate.isSoldOut = body.isSoldOut;
     if (body.price !== undefined) dataToUpdate.price = Number(body.price);
+    if (body.stock !== undefined) {
+      const stock = Number(body.stock);
+      if (!Number.isInteger(stock) || stock < 0) {
+        return NextResponse.json(
+          { error: "Stock must be a whole number greater than or equal to 0" },
+          { status: 400 },
+        );
+      }
+      dataToUpdate.stock = stock;
+      dataToUpdate.isSoldOut = stock === 0;
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id: targetId },
@@ -130,8 +147,18 @@ export async function PUT(req, { params }) {
         : body.categoryId
       : null;
     const enteredPrice = Number(body.price);
-    const enteredOriginalPrice = body.originalPrice ? Number(body.originalPrice) : null;
-    const hasDiscountPrice = enteredOriginalPrice !== null && enteredOriginalPrice > 0;
+    const enteredOriginalPrice = body.originalPrice
+      ? Number(body.originalPrice)
+      : null;
+    const stock = Number(body.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      return NextResponse.json(
+        { error: "Stock must be a whole number greater than or equal to 0" },
+        { status: 400 },
+      );
+    }
+    const hasDiscountPrice =
+      enteredOriginalPrice !== null && enteredOriginalPrice > 0;
     const salePrice = hasDiscountPrice
       ? Math.min(enteredPrice, enteredOriginalPrice)
       : enteredPrice;
@@ -149,10 +176,13 @@ export async function PUT(req, { params }) {
           : { disconnect: true },
         price: salePrice,
         originalPrice,
+        stock,
         fitTag: body.fitTag,
         description: body.description,
-        collectionSlugs: Array.isArray(body.collectionSlugs) ? body.collectionSlugs : [],
-        isSoldOut: Boolean(body.isSoldOut),
+        collectionSlugs: Array.isArray(body.collectionSlugs)
+          ? body.collectionSlugs
+          : [],
+        isSoldOut: stock === 0 || Boolean(body.isSoldOut),
         availableSizes: body.availableSizes || [],
         images: body.images || [],
       },
@@ -172,7 +202,10 @@ export async function DELETE(req, { params }) {
     const targetId = parseId(resolvedParams?.id);
 
     if (targetId === null || typeof targetId !== "bigint") {
-      return NextResponse.json({ error: "Valid product ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid product ID is required" },
+        { status: 400 },
+      );
     }
 
     const deletedProduct = await prisma.product.delete({
@@ -180,8 +213,11 @@ export async function DELETE(req, { params }) {
     });
 
     return NextResponse.json(
-      { message: "Product deleted successfully", id: deletedProduct.id.toString() },
-      { status: 200 }
+      {
+        message: "Product deleted successfully",
+        id: deletedProduct.id.toString(),
+      },
+      { status: 200 },
     );
   } catch (error) {
     if (error.code === "P2025") {
@@ -189,6 +225,9 @@ export async function DELETE(req, { params }) {
     }
 
     console.error("DELETE Product Error:", error);
-    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete product" },
+      { status: 500 },
+    );
   }
 }

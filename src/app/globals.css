@@ -17,3 +17,24 @@ body {
   color: var(--foreground);
   font-family: var(--font-saira), Arial, Helvetica, sans-serif;
 }
+
+.invoice-print {
+  display: none;
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .orders-screen,
+  .admin-sidebar,
+  .admin-header {
+    display: none !important;
+  }
+
+  .invoice-print {
+    display: block !important;
+    min-height: 100vh;
+  }
+}

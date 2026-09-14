@@ -17,22 +17,39 @@ export async function POST(request) {
       return NextResponse.json({ error: "Order items, address, and valid totals are required" }, { status: 400 });
     }
 
-    const order = await prisma.order.create({
-      data: {
-        userId: authUser.id,
-        items,
-        address,
-        subtotal,
-        discount,
-        total,
-        paymentId: body.paymentId || null,
-        paymentStatus: body.paymentId ? "PAID" : "PENDING",
-      },
+    const order = await prisma.$transaction(async (transaction) => {
+      for (const item of items) {
+        const productId = String(item.id || "");
+        const quantity = Number(item.quantity);
+        if (!/^\d+$/.test(productId) || !Number.isInteger(quantity) || quantity < 1) {
+          throw new Error("Invalid product quantity");
+        }
+
+        const updated = await transaction.product.updateMany({
+          where: { id: BigInt(productId), stock: { gte: quantity }, isSoldOut: false },
+          data: { stock: { decrement: quantity } },
+        });
+        if (updated.count !== 1) throw new Error("One or more products are out of stock");
+      }
+
+      return transaction.order.create({
+        data: {
+          userId: authUser.id,
+          items,
+          address,
+          subtotal,
+          discount,
+          total,
+          paymentId: body.paymentId || null,
+          paymentStatus: body.paymentId ? "PAID" : "PENDING",
+        },
+      });
     });
     return NextResponse.json(serializeOrder(order), { status: 201 });
   } catch (error) {
     console.error("Create order error:", error);
-    return NextResponse.json({ error: "Could not create order" }, { status: 500 });
+    const isStockError = error.message === "One or more products are out of stock";
+    return NextResponse.json({ error: isStockError ? error.message : "Could not create order" }, { status: isStockError ? 409 : 500 });
   }
 }
 

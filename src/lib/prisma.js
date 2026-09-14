@@ -4,7 +4,16 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis;
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL;
+
+if (!connectionString) {
+  throw new Error(
+    "Database connection is not configured. Set DATABASE_URL in the Vercel project environment variables.",
+  );
+}
 
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);

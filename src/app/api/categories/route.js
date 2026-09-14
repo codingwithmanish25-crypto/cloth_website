@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { WEBSITE_CATEGORY_ROWS } from "@/lib/websiteCategories";
 
 function getCategoryGroup(slug) {
-  const staticCategory = WEBSITE_CATEGORY_ROWS.find((item) => item.slug === slug);
+  const staticCategory = WEBSITE_CATEGORY_ROWS.find(
+    (item) => item.slug === slug,
+  );
   if (staticCategory) return staticCategory.group;
 
   const group = String(slug).split("-")[0]?.toUpperCase();
@@ -15,14 +17,21 @@ function getCategoryGroup(slug) {
 // GET All Categories
 export async function GET() {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        { error: "DATABASE_URL is not configured for this deployment" },
+        { status: 500 },
+      );
+    }
+
     await Promise.all(
       WEBSITE_CATEGORY_ROWS.map(({ name, slug }) =>
         prisma.category.upsert({
           where: { slug },
           update: { name },
           create: { name, slug },
-        })
-      )
+        }),
+      ),
     );
 
     const categories = await prisma.category.findMany({
@@ -46,7 +55,13 @@ export async function GET() {
     return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
     console.error("GET Categories Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Could not load categories",
+        code: error?.code || "CATEGORY_QUERY_FAILED",
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -61,7 +76,7 @@ export async function POST(req) {
     if (!name || !slug || !validGroups.includes(normalizedGroup)) {
       return NextResponse.json(
         { error: "Name and a valid group are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,7 +91,7 @@ export async function POST(req) {
           error: `${existingCategory.name} already exists in ${normalizedGroup}`,
           category: { ...existingCategory, id: existingCategory.id.toString() },
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -89,7 +104,7 @@ export async function POST(req) {
         ...category,
         id: category.id.toString(),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("POST Category Error:", error);

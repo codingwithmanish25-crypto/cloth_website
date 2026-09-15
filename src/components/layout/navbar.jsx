@@ -4,7 +4,16 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "@/components/layout/navbar.module.css";
-import { Search, ShoppingCart, User, ClipboardList, Menu, X, Plus, Minus } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  ClipboardList,
+  Menu,
+  X,
+  Plus,
+  Minus,
+} from "lucide-react";
 import Image from "next/image";
 import Cart from "../cart";
 import { useCart } from "@/context/CartContext";
@@ -38,21 +47,21 @@ const Navbar = () => {
       const width = window.innerWidth;
       setWindowWidth(width);
       setIsDesktop(width >= 1024);
-      
+
       if (width >= 1024 && isMobileOpen) {
         setIsMobileOpen(false);
       }
     };
-    
+
     handleResize();
     window.addEventListener("resize", handleResize);
-    
+
     if (isMobileOpen || isCartOpen || isSearchOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-    
+
     return () => {
       window.removeEventListener("resize", handleResize);
       document.body.style.overflow = "unset";
@@ -66,9 +75,11 @@ const Navbar = () => {
       if (mounted) setSessionUser(data.session?.user || null);
     });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionUser(session?.user || null);
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSessionUser(session?.user || null);
+      },
+    );
 
     return () => {
       mounted = false;
@@ -101,9 +112,12 @@ const Navbar = () => {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/products?q=${encodeURIComponent(query)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/products?q=${encodeURIComponent(query)}`,
+          {
+            signal: controller.signal,
+          },
+        );
         const data = await response.json();
         if (response.ok && Array.isArray(data)) setSearchResults(data);
         else setSearchResults([]);
@@ -132,7 +146,8 @@ const Navbar = () => {
   };
 
   const getSearchImage = (product) => {
-    if (Array.isArray(product.images) && product.images[0]) return product.images[0];
+    if (Array.isArray(product.images) && product.images[0])
+      return product.images[0];
     return "/placeholder.jpg";
   };
 
@@ -204,7 +219,6 @@ const Navbar = () => {
     <>
       <nav className="w-full bg-[#0a0a0a] shadow-sm border-b border-[#27272a] px-3 sm:px-4 md:px-6 lg:px-8 relative z-40 flex">
         <div className="w-full max-w-7xl mx-auto flex items-center justify-between h-14 sm:h-16 md:h-20 relative">
-          
           {/* LEFT SECTION */}
           <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-start h-full">
             <button
@@ -239,7 +253,9 @@ const Navbar = () => {
                             <div key={index}>
                               {!col.isDirect ? (
                                 <>
-                                  <h4 className={styles.columnTitle}>{col.title}</h4>
+                                  <h4 className={styles.columnTitle}>
+                                    {col.title}
+                                  </h4>
                                   <div className={styles.columnList}>
                                     {col.links.map((link) => (
                                       <Link
@@ -318,7 +334,7 @@ const Navbar = () => {
                 onMouseEnter={() => handleMouseEnter("policy")}
                 onMouseLeave={handleMouseLeave}
               >
-                <Link href="/policy">Policy</Link>
+                <Link href="/policy/privacy-policy">Policy</Link>
                 <AnimatePresence>
                   {activeMenu === "policy" && windowWidth >= 1024 && (
                     <motion.div
@@ -372,17 +388,25 @@ const Navbar = () => {
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 md:gap-3 lg:gap-5 xl:gap-6 flex-1 h-full text-white">
             <button
               onClick={openSearch}
-              className="p-1 hover:text-[#10b981] transition-colors focus:outline-none cursor-pointer" 
+              className="p-1 hover:text-[#10b981] transition-colors focus:outline-none cursor-pointer"
               aria-label="Search"
             >
               <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             {sessionUser ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link href="/orders" className="p-1 hover:text-[#10b981] transition-colors" aria-label="My Orders">
+                <Link
+                  href="/orders"
+                  className="p-1 hover:text-[#10b981] transition-colors"
+                  aria-label="My Orders"
+                >
                   <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
-                <Link href="/profile" className="p-1 hover:text-[#10b981] transition-colors" aria-label="Profile">
+                <Link
+                  href="/profile"
+                  className="p-1 hover:text-[#10b981] transition-colors"
+                  aria-label="Profile"
+                >
                   <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
               </div>
@@ -402,11 +426,11 @@ const Navbar = () => {
                 </Link>
               </div>
             )}
-            
+
             {/* CART BUTTON WITH CONTEXT TRIGGER AND REAL-TIME COUNTER */}
-            <button 
+            <button
               onClick={openCart}
-              className="p-1 hover:text-[#10b981] transition-colors relative focus:outline-none cursor-pointer" 
+              className="p-1 hover:text-[#10b981] transition-colors relative focus:outline-none cursor-pointer"
               aria-label="Cart"
             >
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -467,10 +491,14 @@ const Navbar = () => {
                 <div className="max-h-[65vh] overflow-y-auto p-3">
                   <div className="flex items-center justify-between px-1 pb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                     <span>{isSearching ? "Searching" : "Products"}</span>
-                    {!isSearching && searchResults.length > 0 && <span>{searchResults.length} results</span>}
+                    {!isSearching && searchResults.length > 0 && (
+                      <span>{searchResults.length} results</span>
+                    )}
                   </div>
                   {isSearching ? (
-                    <p className="px-1 py-8 text-center text-sm text-zinc-500">Searching products...</p>
+                    <p className="px-1 py-8 text-center text-sm text-zinc-500">
+                      Searching products...
+                    </p>
                   ) : searchResults.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {searchResults.map((product) => {
@@ -489,7 +517,9 @@ const Navbar = () => {
                                 fill
                                 sizes="(max-width: 640px) 42vw, 140px"
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                unoptimized={getSearchImage(product).startsWith("http")}
+                                unoptimized={getSearchImage(product).startsWith(
+                                  "http",
+                                )}
                               />
                               {product.isSoldOut && (
                                 <span className="absolute left-1 top-1 bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-white">
@@ -497,11 +527,17 @@ const Navbar = () => {
                                 </span>
                               )}
                             </div>
-                            <h3 className="mt-2 truncate text-[11px] font-semibold uppercase">{product.title}</h3>
+                            <h3 className="mt-2 truncate text-[11px] font-semibold uppercase">
+                              {product.title}
+                            </h3>
                             <div className="flex items-center gap-1 text-[10px]">
-                              <span className="font-bold">₹{prices.sale.toLocaleString("en-IN")}</span>
+                              <span className="font-bold">
+                                ₹{prices.sale.toLocaleString("en-IN")}
+                              </span>
                               {prices.original > prices.sale && (
-                                <span className="text-zinc-400 line-through">₹{prices.original.toLocaleString("en-IN")}</span>
+                                <span className="text-zinc-400 line-through">
+                                  ₹{prices.original.toLocaleString("en-IN")}
+                                </span>
                               )}
                             </div>
                           </Link>
@@ -509,7 +545,9 @@ const Navbar = () => {
                       })}
                     </div>
                   ) : (
-                    <p className="px-1 py-8 text-center text-sm text-zinc-500">No products found.</p>
+                    <p className="px-1 py-8 text-center text-sm text-zinc-500">
+                      No products found.
+                    </p>
                   )}
                 </div>
               ) : (
@@ -541,7 +579,11 @@ const Navbar = () => {
               className="fixed top-0 left-0 bottom-0 w-[85%] max-w-[340px] sm:max-w-[360px] bg-[#ffffff] text-[#0a0a0a] z-50 flex flex-col shadow-2xl overflow-y-auto"
             >
               <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
-                <Link href="/" onClick={() => setIsMobileOpen(false)} className="flex items-center">
+                <Link
+                  href="/"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="flex items-center"
+                >
                   <Image
                     src="/images.png"
                     alt="Logo"
@@ -593,7 +635,9 @@ const Navbar = () => {
                               onClick={() => toggleAccordion(idx)}
                               className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 text-sm font-medium text-left text-gray-800 hover:bg-gray-50"
                             >
-                              <span className="text-xs sm:text-sm">{cat.title}</span>
+                              <span className="text-xs sm:text-sm">
+                                {cat.title}
+                              </span>
                               {expandedCategory === idx ? (
                                 <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
                               ) : (
@@ -677,8 +721,20 @@ const Navbar = () => {
                     </>
                   ) : (
                     <div className="flex gap-2 px-4 py-3 sm:px-5">
-                      <Link href="/login" onClick={() => setIsMobileOpen(false)} className="flex-1 border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-800">Login</Link>
-                      <Link href="/register" onClick={() => setIsMobileOpen(false)} className="flex-1 bg-black px-3 py-2 text-center text-xs font-semibold text-white">Register</Link>
+                      <Link
+                        href="/login"
+                        onClick={() => setIsMobileOpen(false)}
+                        className="flex-1 border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-800"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/register"
+                        onClick={() => setIsMobileOpen(false)}
+                        className="flex-1 bg-black px-3 py-2 text-center text-xs font-semibold text-white"
+                      >
+                        Register
+                      </Link>
                     </div>
                   )}
                   <Link
@@ -689,7 +745,7 @@ const Navbar = () => {
                     Sale
                   </Link>
                   <Link
-                    href="/policy"
+                    href="/policy/privacy-policy"
                     onClick={() => setIsMobileOpen(false)}
                     className="block px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >

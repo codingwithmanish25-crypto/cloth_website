@@ -23,7 +23,7 @@ const PolicyLayout = ({
       <div className="relative mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
         <div className="max-w-3xl">
           <p className="mb-5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-400">
-            <ShieldCheck className="h-4 w-4" /> Customer care / {eyebrow}
+            <ShieldCheck className="h-4 w-4" /> Customer Care / {eyebrow}
           </p>
           <h1 className="max-w-2xl text-4xl font-black uppercase leading-[0.98] tracking-tight text-white sm:text-5xl lg:text-6xl">
             {title}

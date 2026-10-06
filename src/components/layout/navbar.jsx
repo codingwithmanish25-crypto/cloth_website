@@ -229,7 +229,18 @@ const Navbar = () => {
               <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            <ul className="hidden lg:flex items-center gap-4 xl:gap-6 2xl:gap-8 h-full list-none m-0 p-0 text-white whitespace-nowrap">
+            <Link href="/" className="flex shrink-0 items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Forty Eight"
+                width={160}
+                height={59}
+                className="h-auto w-[92px] max-h-[34px] object-contain sm:w-[112px] sm:max-h-[42px] lg:w-[148px] lg:max-h-[54px]"
+                priority
+              />
+            </Link>
+
+            <ul className="hidden lg:absolute lg:inset-y-0 lg:left-1/2 lg:z-10 lg:flex lg:-translate-x-1/2 items-center gap-1 xl:gap-2 h-full list-none m-0 p-0 text-white whitespace-nowrap">
               <li
                 className={styles.navItem}
                 onMouseEnter={() => handleMouseEnter("category")}
@@ -368,20 +379,6 @@ const Navbar = () => {
                 <Link href="/contact-us">Contact Us</Link>
               </li>
             </ul>
-          </div>
-
-          {/* CENTER SECTION */}
-          <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:justify-center shrink-0">
-            <Link href="/" className="flex items-center justify-center">
-              <Image
-                src="/images.jpeg"
-                alt="Logo"
-                width={100}
-                height={25}
-                className="max-h-5 sm:max-h-7 md:max-h-10 lg:max-h-12 w-auto object-contain"
-                priority
-              />
-            </Link>
           </div>
 
           {/* RIGHT SECTION */}
@@ -585,7 +582,7 @@ const Navbar = () => {
                   className="flex items-center"
                 >
                   <Image
-                    src="/images.png"
+                    src="/logo.png"
                     alt="Logo"
                     width={70}
                     height={18}

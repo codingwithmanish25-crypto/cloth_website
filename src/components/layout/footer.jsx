@@ -47,7 +47,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full bg-[#0a0a0a] text-white border-t border-[#27272a] pt-16 pb-8 px-6 md:px-12">
+    <footer className="site-footer w-full bg-[#0a0a0a] text-white border-t border-[#27272a] pt-16 pb-8 px-6 md:px-12">
       <div className="max-w-7xl mx-auto flex flex-col gap-12">
         
         {/* TOP SECTION: Newsletter Subscription */}

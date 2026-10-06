@@ -73,10 +73,10 @@ const SectionFirst = () => {
 
           <div className="absolute inset-0 flex items-center justify-start p-8 md:p-16 z-20">
             <div className="max-w-md">
-              <h2 className="text-white text-3xl md:text-5xl font-black tracking-widest uppercase drop-shadow-md">
+              <h2 className="image-overlay-text text-white text-3xl md:text-5xl font-black tracking-widest uppercase drop-shadow-md">
                 {item.title}
               </h2>
-              <p className="text-zinc-200 text-sm font-bold tracking-wider mt-2 underline underline-offset-4">
+              <p className="image-overlay-text text-zinc-200 text-sm font-bold tracking-wider mt-2 underline underline-offset-4">
                 SHOP NOW
               </p>
             </div>

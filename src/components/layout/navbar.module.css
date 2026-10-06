@@ -98,6 +98,29 @@
   color: #ffffff;
 }
 
+:global(html[data-theme="light"]) .navItem {
+  color: #52525b;
+}
+
+:global(html[data-theme="light"]) .navItem:hover {
+  color: #059669;
+}
+
+:global(html[data-theme="light"]) .dropdownMenu {
+  background-color: #ffffff;
+  border-color: #e4e4e7;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+}
+
+:global(html[data-theme="light"]) .dropdownLink {
+  color: #52525b;
+}
+
+:global(html[data-theme="light"]) .dropdownLink:hover,
+:global(html[data-theme="light"]) .collectionLink:hover {
+  color: #18181b;
+}
+
 /* ============================================
    RESPONSIVE BREAKPOINTS - FIXED FOR ALL DEVICES
    ============================================ */

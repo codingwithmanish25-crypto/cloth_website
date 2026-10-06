@@ -105,10 +105,10 @@ const Sectiontwo = () => {
 
                 {/* Title Text at Bottom Center */}
                 <div className="absolute bottom-4 left-0 right-0 text-center px-2">
-                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
+                  <h3 className="image-overlay-text text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
                     {fit}
                   </h3>
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-200 drop-shadow-md">
+                  <p className="image-overlay-text mt-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-200 drop-shadow-md">
                     {product ? "1 Product" : "0 Products"}
                   </p>
                 </div>

@@ -1,4 +1,5 @@
 import { Saira } from "next/font/google";
+import ThemeChange from "@/components/themechange";
 import "./globals.css";
 
 const saira = Saira({
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${saira.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-black text-white">
         {children}
+        <ThemeChange />
       </body>
     </html>
   );

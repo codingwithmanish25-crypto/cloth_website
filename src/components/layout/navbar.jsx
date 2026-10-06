@@ -374,7 +374,7 @@ const Navbar = () => {
           <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:justify-center shrink-0">
             <Link href="/" className="flex items-center justify-center">
               <Image
-                src="/images.png"
+                src="/images.jpeg"
                 alt="Logo"
                 width={100}
                 height={25}

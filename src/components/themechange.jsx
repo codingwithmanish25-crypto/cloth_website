@@ -1,17 +1,35 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+
+const THEME_CHANGE_EVENT = "site-theme-change";
+
+const getTheme = () =>
+  document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+
+const subscribeToTheme = (callback) => {
+  window.addEventListener(THEME_CHANGE_EVENT, callback);
+  return () => window.removeEventListener(THEME_CHANGE_EVENT, callback);
+};
+
+const getServerTheme = () => "light";
 
 const ThemeChange = () => {
-  const [theme, setTheme] = useState("dark");
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getTheme,
+    getServerTheme,
+  );
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("theme");
-    const initialTheme = savedTheme === "light" ? "light" : "dark";
+    const initialTheme = savedTheme === "dark" ? "dark" : "light";
 
-    document.documentElement.dataset.theme = initialTheme;
-    setTheme(initialTheme);
+    if (document.documentElement.dataset.theme !== initialTheme) {
+      document.documentElement.dataset.theme = initialTheme;
+      window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -19,7 +37,7 @@ const ThemeChange = () => {
 
     document.documentElement.dataset.theme = nextTheme;
     window.localStorage.setItem("theme", nextTheme);
-    setTheme(nextTheme);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   };
 
   return (

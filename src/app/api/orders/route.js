@@ -44,7 +44,7 @@ export async function POST(request) {
           paymentStatus: body.paymentId ? "PAID" : "PENDING",
         },
       });
-    });
+    }, { maxWait: 10_000, timeout: 15_000 });
     return NextResponse.json(serializeOrder(order), { status: 201 });
   } catch (error) {
     console.error("Create order error:", error);

@@ -11,6 +11,7 @@ const Cart = () => {
   const {
     isCartOpen,
     closeCart,
+    clearCart,
     cartItems,
     updateQuantity,
     removeFromCart,
@@ -110,7 +111,7 @@ const Cart = () => {
           setCheckoutError(orderError.error || "Payment succeeded but order could not be saved. Contact support.");
           return;
         }
-        setIsCheckoutOpen(false); closeCart(); alert("Payment successful. Your order is pending confirmation.");
+        clearCart(); setIsCheckoutOpen(false); alert("Payment successful. Your order is pending confirmation.");
       }, theme: { color: "#f97316" } });
       payment.open();
     } catch (error) { setCheckoutError(error.message); } finally { setCheckoutBusy(false); }

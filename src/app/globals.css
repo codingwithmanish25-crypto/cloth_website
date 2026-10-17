@@ -81,7 +81,7 @@ html[data-theme="light"] :is(
   [class*="bg-neutral-900/"],
   [class*="bg-neutral-800/"],
   [class*="bg-neutral-700/"],
-  [class*="bg-[#1"],
+  [class*="bg-[#1"]:not([class*="bg-[#10b981]"]),
   [class*="bg-[#2"]
 ) {
   background-color: #f4f4f5 !important;

@@ -1,18 +1,83 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 const CartContext = createContext(undefined);
+const CART_STORAGE_KEY = "cloth-website-cart-v1";
+const CART_CHANGE_EVENT = "cloth-website-cart-change";
+const EMPTY_CART_SNAPSHOT = JSON.stringify({ items: [], appliedCoupons: [], isCartOpen: false });
+
+const getCartSnapshot = () => {
+  try {
+    return window.localStorage.getItem(CART_STORAGE_KEY) || EMPTY_CART_SNAPSHOT;
+  } catch {
+    return EMPTY_CART_SNAPSHOT;
+  }
+};
+
+const subscribeToCart = (onStoreChange) => {
+  window.addEventListener(CART_CHANGE_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(CART_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+};
+
+const parseCartSnapshot = (snapshot) => {
+  try {
+    const parsed = JSON.parse(snapshot);
+    return {
+      items: Array.isArray(parsed.items)
+        ? parsed.items
+            .filter((item) => item && typeof item === "object" && item.id != null && Number(item.quantity) > 0)
+            .map((item) => ({ ...item, quantity: Number(item.quantity) }))
+        : [],
+      appliedCoupons: Array.isArray(parsed.appliedCoupons) ? parsed.appliedCoupons : [],
+      isCartOpen: parsed.isCartOpen === true,
+    };
+  } catch {
+    return { items: [], appliedCoupons: [], isCartOpen: false };
+  }
+};
 
 export const CartProvider = ({ children }) => {
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  
-  const [cartItems, setCartItems] = useState([]);
-  const [appliedCoupons, setAppliedCoupons] = useState([]);
   const [couponError, setCouponError] = useState("");
+  const cartSnapshot = useSyncExternalStore(
+    subscribeToCart,
+    getCartSnapshot,
+    () => EMPTY_CART_SNAPSHOT
+  );
+  const { items: cartItems, appliedCoupons, isCartOpen } = parseCartSnapshot(cartSnapshot);
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
+  const updateCart = (updater) => {
+    try {
+      const currentCart = parseCartSnapshot(getCartSnapshot());
+      const nextCart = typeof updater === "function" ? updater(currentCart) : updater;
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextCart));
+      window.dispatchEvent(new Event(CART_CHANGE_EVENT));
+    } catch {
+      // Keep cart interactions available if browser storage is unavailable.
+    }
+  };
+
+  const setCartItems = (updater) => {
+    updateCart((currentCart) => ({
+      ...currentCart,
+      items: typeof updater === "function" ? updater(currentCart.items) : updater,
+    }));
+  };
+
+  const setAppliedCoupons = (updater) => {
+    updateCart((currentCart) => ({
+      ...currentCart,
+      appliedCoupons: typeof updater === "function" ? updater(currentCart.appliedCoupons) : updater,
+    }));
+  };
+
+  const openCart = () => updateCart((currentCart) => ({ ...currentCart, isCartOpen: true }));
+  const closeCart = () => updateCart((currentCart) => ({ ...currentCart, isCartOpen: false }));
+  const clearCart = () => updateCart({ items: [], appliedCoupons: [], isCartOpen: false });
 
   const addToCart = (product, selectedSize) => {
     if (Number(product.stock) <= 0 || product.isSoldOut) return false;
@@ -116,6 +181,7 @@ export const CartProvider = ({ children }) => {
         isCartOpen,
         openCart,
         closeCart,
+        clearCart,
         cartItems,
         addToCart,
         updateQuantity,

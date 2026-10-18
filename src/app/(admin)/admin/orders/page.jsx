@@ -87,26 +87,26 @@ export default function AdminOrdersPage() {
               return (
                 <div
                   key={order.id}
-                  className={`space-y-3 p-5 ${order.status === "CANCELLED" ? "bg-red-950/20" : ""}`}
+                  className={`admin-order-row space-y-3 p-5 ${order.status === "CANCELLED" ? "admin-order-row-cancelled bg-red-950/20" : ""}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="admin-order-title text-sm font-semibold text-white">
                         Order #{order.id}
                       </p>
-                      <p className="mt-1 text-xs text-zinc-400">
+                      <p className="admin-order-customer mt-1 text-xs text-zinc-400">
                         {order.user?.name || order.user?.username || "Customer"}{" "}
                         · {order.user?.emails?.[0] || "No email"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`text-sm font-bold ${order.status === "CANCELLED" ? "text-red-400" : "text-white"}`}
+                        className={`admin-order-price text-sm font-bold ${order.status === "CANCELLED" ? "text-red-400" : "text-white"}`}
                       >
                         ₹{Number(order.total).toLocaleString("en-IN")}
                       </span>
                       {customerCancelled ? (
-                        <span className="rounded border border-red-500/50 bg-red-950 px-2 py-2 text-[11px] font-semibold text-red-300">
+                        <span className="admin-order-customer-cancel rounded border border-red-500/50 bg-red-950 px-2 py-2 text-[11px] font-semibold text-red-300">
                           CANCELLED BY CUSTOMER
                         </span>
                       ) : (
@@ -115,7 +115,7 @@ export default function AdminOrdersPage() {
                           onChange={(event) =>
                             updateStatus(order.id, event.target.value)
                           }
-                          className={`rounded border px-2 py-2 text-[11px] text-white ${order.status === "CANCELLED" ? "border-red-500/50 bg-red-950" : "border-zinc-700 bg-zinc-950"}`}
+                          className={`admin-order-status-select rounded border px-2 py-2 text-[11px] text-white ${order.status === "CANCELLED" ? "admin-order-status-select-cancelled border-red-500/50 bg-red-950" : "border-zinc-700 bg-zinc-950"}`}
                         >
                           <option>PENDING</option>
                           <option>PROCESSING</option>
@@ -126,28 +126,28 @@ export default function AdminOrdersPage() {
                       <button
                         type="button"
                         onClick={() => printInvoice(order)}
-                        className="inline-flex items-center gap-1.5 rounded border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-200 hover:border-emerald-500 hover:text-emerald-400"
+                        className="admin-order-print inline-flex items-center gap-1.5 rounded border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-[11px] text-zinc-200 hover:border-emerald-500 hover:text-emerald-400"
                       >
                         <Printer className="h-3.5 w-3.5" /> Print Invoice
                       </button>
                     </div>
                   </div>
-                  <p className="text-xs text-zinc-400">
+                  <p className="admin-order-address text-xs text-zinc-400">
                     Ship to: {order.address}
                   </p>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="admin-order-meta text-[11px] text-zinc-500">
                     Status:{" "}
                     <span
-                      className={
+                      className={`admin-order-state ${
                         order.status === "CANCELLED"
-                          ? "text-red-400"
+                          ? "admin-order-state-cancelled text-red-400"
                           : "text-zinc-300"
-                      }
+                      }`}
                     >
                       {order.status}
                     </span>
                     {order.status === "CANCELLED" && (
-                      <span className="ml-2 font-semibold text-red-400">
+                      <span className="admin-order-state-cancelled ml-2 font-semibold text-red-400">
                         Cancelled by{" "}
                         {order.cancelledBy === "CUSTOMER"
                           ? "customer"

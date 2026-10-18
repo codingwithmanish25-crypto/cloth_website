@@ -165,6 +165,73 @@ html[data-theme="light"] [class*="placeholder-zinc-"]::placeholder {
   color: #71717a !important;
 }
 
+html[data-theme="light"] .orders-screen button.admin-order-print {
+  background-color: #ffffff !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .orders-screen button.admin-order-print:hover {
+  border-color: #10b981 !important;
+  color: #059669 !important;
+}
+
+html[data-theme="light"] .orders-screen {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-row {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-row-cancelled {
+  background-color: #fff1f2 !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-title,
+html[data-theme="light"] .orders-screen .admin-order-price {
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-customer,
+html[data-theme="light"] .orders-screen .admin-order-address,
+html[data-theme="light"] .orders-screen .admin-order-meta {
+  color: #52525b !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-state {
+  color: #3f3f46 !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-state-cancelled,
+html[data-theme="light"] .orders-screen .admin-order-price.text-red-400 {
+  color: #b91c1c !important;
+}
+
+html[data-theme="light"] .orders-screen select.admin-order-status-select {
+  background-color: #ffffff !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+  color-scheme: light;
+}
+
+html[data-theme="light"] .orders-screen select.admin-order-status-select option {
+  background-color: #ffffff !important;
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .orders-screen select.admin-order-status-select-cancelled {
+  background-color: #fee2e2 !important;
+  border-color: #fda4af !important;
+  color: #991b1b !important;
+}
+
+html[data-theme="light"] .orders-screen .admin-order-customer-cancel {
+  background-color: #ffe4e6 !important;
+  color: #9f1239 !important;
+}
+
 html[data-theme="light"] .theme-toggle {
   background-color: #ffffff;
   border-color: #e4e4e7;

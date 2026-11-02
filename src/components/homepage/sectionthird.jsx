@@ -1,56 +1,56 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ProductCard from "@/components/productcard";
+import BlinkLoader from "@/components/BlinkLoader";
 
 const PAGE_SIZE = 5;
 
-const ProductSkeleton = () => (
-  <div className="animate-pulse">
-    <div className="aspect-[3/4] w-full bg-zinc-800" />
-    <div className="mt-3 h-3 w-4/5 bg-zinc-800" />
-    <div className="mt-2 h-3 w-2/5 bg-zinc-800" />
-    <div className="mt-2 h-2 w-3/5 bg-zinc-800" />
-  </div>
-);
-
-const ProductSkeletonGrid = ({ count = PAGE_SIZE }) => (
-  <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
-    {Array.from({ length: count }, (_, index) => (
-      <ProductSkeleton key={index} />
-    ))}
-  </div>
-);
-
 const Sectionthird = () => {
   const [fitTags, setFitTags] = useState([]);
+  const [fitTagsLoaded, setFitTagsLoaded] = useState(false);
   const [activeFit, setActiveFit] = useState("");
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const loadMoreControllerRef = useRef(null);
+
+  useEffect(() => () => loadMoreControllerRef.current?.abort(), []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadFitTags = async () => {
       try {
         const response = await fetch("/api/products?fitTags=true");
         const data = await response.json();
         if (!response.ok || !Array.isArray(data))
           throw new Error("Failed to load fit types");
+        if (cancelled) return;
         setFitTags(data);
         setActiveFit(data[0] || "");
       } catch (error) {
-        console.error("Failed to load homepage fit types:", error);
+        if (!cancelled) {
+          console.error("Failed to load homepage fit types:", error);
+        }
+      } finally {
+        if (!cancelled) setFitTagsLoaded(true);
       }
     };
 
     loadFitTags();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!fitTags.length && activeFit !== "") return;
+    if (!fitTagsLoaded) return;
 
+    const controller = new AbortController();
     const loadProducts = async () => {
       setLoading(true);
       try {
@@ -59,24 +59,36 @@ const Sectionthird = () => {
           limit: String(PAGE_SIZE),
         });
         if (activeFit) params.set("fitTag", activeFit);
-        const response = await fetch(`/api/products?${params}`);
+        const response = await fetch(`/api/products?${params}`, {
+          signal: controller.signal,
+        });
         const data = await response.json();
+        if (controller.signal.aborted) return;
         if (!response.ok) throw new Error("Failed to load fit products");
-        setProducts(data.products || []);
+        setProducts(Array.isArray(data.products) ? data.products : []);
         setPage(1);
         setHasMore(Boolean(data.hasMore));
       } catch (error) {
-        console.error("Failed to load homepage products:", error);
+        if (!controller.signal.aborted) {
+          console.error("Failed to load homepage products:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     loadProducts();
-  }, [activeFit, fitTags.length]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [activeFit, fitTagsLoaded]);
 
   const loadMore = async () => {
     const nextPage = page + 1;
+    const controller = new AbortController();
+    loadMoreControllerRef.current?.abort();
+    loadMoreControllerRef.current = controller;
     setLoadingMore(true);
     try {
       const params = new URLSearchParams({
@@ -84,16 +96,24 @@ const Sectionthird = () => {
         limit: String(PAGE_SIZE),
       });
       if (activeFit) params.set("fitTag", activeFit);
-      const response = await fetch(`/api/products?${params}`);
+      const response = await fetch(`/api/products?${params}`, {
+        signal: controller.signal,
+      });
       const data = await response.json();
+      if (controller.signal.aborted) return;
       if (!response.ok) throw new Error("Failed to load more products");
       setProducts((current) => [...current, ...(data.products || [])]);
       setPage(nextPage);
       setHasMore(Boolean(data.hasMore));
     } catch (error) {
-      console.error("Failed to load more homepage products:", error);
+      if (!controller.signal.aborted) {
+        console.error("Failed to load more homepage products:", error);
+      }
     } finally {
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoadingMore(false);
+        loadMoreControllerRef.current = null;
+      }
     }
   };
 
@@ -122,7 +142,7 @@ const Sectionthird = () => {
       </div>
 
       {loading ? (
-        <ProductSkeletonGrid />
+        <BlinkLoader label="Loading products..." className="min-h-64" />
       ) : products.length ? (
         <>
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">

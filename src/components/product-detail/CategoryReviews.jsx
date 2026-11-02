@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import BlinkLoader from "@/components/BlinkLoader";
 
 const stars = [1, 2, 3, 4, 5];
 
@@ -127,6 +128,9 @@ const CategoryReviews = ({ productSlug }) => {
       </form>
 
       <div className="mt-8 space-y-3">
+        {loading && reviews.length === 0 && (
+          <BlinkLoader label="Loading reviews..." className="min-h-24" />
+        )}
         {reviews.map((review) => <article key={review.id} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-white">{review.user?.name || review.user?.username || "Customer"}</p><div className="text-sm text-amber-400">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div></div><div className="flex items-center gap-3"><time className="text-[10px] text-zinc-500">{new Date(review.createdAt).toLocaleDateString("en-IN")}</time>{currentUserId === review.user?.id && <button type="button" onClick={() => deleteReview(review.id)} className="text-[10px] font-semibold uppercase text-red-400 hover:text-red-300">Delete</button>}</div></div>{review.title && <h4 className="mt-3 text-sm font-semibold text-zinc-200">{review.title}</h4>}<p className="mt-1 text-sm leading-relaxed text-zinc-400">{review.body}</p></article>)}
         {!loading && reviews.length === 0 && <p className="text-sm text-zinc-500">No reviews yet.</p>}
         {hasMore && <button type="button" onClick={() => loadReviews(page + 1)} className="rounded border border-zinc-700 px-4 py-2 text-xs font-semibold uppercase text-zinc-200 hover:border-emerald-500">Load More Reviews</button>}

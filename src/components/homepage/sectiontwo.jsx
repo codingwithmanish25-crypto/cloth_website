@@ -4,9 +4,11 @@ import { MapPin, Truck, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import BlinkLoader from "@/components/BlinkLoader";
 
 const Sectiontwo = () => {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Image layout grid data array
   const fits = ["RELAXED FIT", "OVERSIZED FIT", "REGULAR FIT", "SLIM FIT"];
@@ -20,7 +22,12 @@ const Sectiontwo = () => {
         const data = await response.json();
         if (active && Array.isArray(data)) setProducts(data);
       })
-      .catch((error) => console.error("Failed to load fit products:", error));
+      .catch((error) => {
+        if (active) console.error("Failed to load fit products:", error);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     return () => {
       active = false;
@@ -68,54 +75,56 @@ const Sectiontwo = () => {
 
       {/* 3. Fit Product Grid */}
       <div className="max-w-7xl mx-auto px-2 sm:px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          {fits.map((fit) => {
-            const product = products.find(
-              (entry) =>
-                String(entry.fitTag || "")
-                  .toLowerCase()
-                  .trim() === fit.toLowerCase(),
-            );
-            const image = Array.isArray(product?.images)
-              ? product.images[0]
-              : product?.images;
+        {loading ? (
+          <BlinkLoader label="Loading products..." className="min-h-[380px]" />
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
+            {fits.map((fit) => {
+              const product = products.find(
+                (entry) =>
+                  String(entry.fitTag || "")
+                    .toLowerCase()
+                    .trim() === fit.toLowerCase(),
+              );
+              const image = Array.isArray(product?.images)
+                ? product.images[0]
+                : product?.images;
 
-            return (
-              <Link
-                key={fit}
-                href={`/shop_by_category?fit=${encodeURIComponent(fit)}`}
-                className="group relative h-[380px] w-full overflow-hidden bg-zinc-900 rounded-sm border border-zinc-800/50 block"
-              >
-                {image ? (
-                  <Image
-                    src={image}
-                    alt={product?.title || fit}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 text-xs uppercase tracking-widest text-zinc-500">
-                    No products
+              return (
+                <Link
+                  key={fit}
+                  href={`/shop_by_category?fit=${encodeURIComponent(fit)}`}
+                  className="group relative block h-[380px] w-full overflow-hidden rounded-sm border border-zinc-800/50 bg-zinc-900"
+                >
+                  {image ? (
+                    <Image
+                      src={image}
+                      alt={product?.title || fit}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 text-xs uppercase tracking-widest text-zinc-500">
+                      No products
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
+
+                  <div className="absolute bottom-4 left-0 right-0 px-2 text-center">
+                    <h3 className="image-overlay-text text-sm font-extrabold uppercase tracking-widest text-white drop-shadow-md sm:text-base">
+                      {fit}
+                    </h3>
+                    <p className="image-overlay-text mt-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-200 drop-shadow-md">
+                      {product ? "1 Product" : "0 Products"}
+                    </p>
                   </div>
-                )}
-
-                {/* Bottom Gradient Overlay (Exact reference matching) */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
-
-                {/* Title Text at Bottom Center */}
-                <div className="absolute bottom-4 left-0 right-0 text-center px-2">
-                  <h3 className="image-overlay-text text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
-                    {fit}
-                  </h3>
-                  <p className="image-overlay-text mt-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-200 drop-shadow-md">
-                    {product ? "1 Product" : "0 Products"}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

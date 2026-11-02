@@ -1,25 +1,9 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
 import ProductCard from "@/components/productcard";
+import BlinkLoader from "@/components/BlinkLoader";
 import FilterSidebar from "./FilterSidebar";
 import { SlidersHorizontal, X } from "lucide-react";
-
-const ProductSkeleton = () => (
-  <div className="animate-pulse">
-    <div className="aspect-[3/4] w-full bg-zinc-800" />
-    <div className="mt-3 h-3 w-4/5 bg-zinc-800" />
-    <div className="mt-2 h-3 w-2/5 bg-zinc-800" />
-    <div className="mt-2 h-2 w-3/5 bg-zinc-800" />
-  </div>
-);
-
-const ProductSkeletonGrid = () => (
-  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 md:gap-6">
-    {Array.from({ length: 8 }, (_, index) => (
-      <ProductSkeleton key={index} />
-    ))}
-  </div>
-);
 
 const ShopByCategory = ({
   initialCategory = "",
@@ -241,7 +225,7 @@ const ShopByCategory = ({
         {/* MAIN PRODUCT GRID SECTION */}
         <main className="flex-1">
           {loading ? (
-            <ProductSkeletonGrid />
+            <BlinkLoader label="Loading products..." className="min-h-64" />
           ) : fetchError ? (
             <div className="text-center py-16 border border-dashed border-zinc-800 rounded-xl">
               <p className="text-zinc-400 text-sm">{fetchError}</p>

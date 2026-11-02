@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Phone, MapPin, Plus, LogOut, Edit2, Trash2, X, Check, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
+import BlinkLoader from "@/components/BlinkLoader";
 
 // Validation Schemas
 const emailSchema = z.string().trim().email("Please enter a valid email address.");
@@ -161,8 +162,8 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-80px)] bg-[#0a0a0a] flex items-center justify-center text-white font-medium">
-        Loading profile...
+      <div className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-[#0a0a0a] px-4">
+        <BlinkLoader label="Loading profile..." />
       </div>
     );
   }

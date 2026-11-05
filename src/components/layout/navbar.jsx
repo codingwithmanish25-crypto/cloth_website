@@ -231,11 +231,19 @@ const Navbar = () => {
 
             <Link href="/" className="flex shrink-0 items-center justify-center">
               <Image
+                src="/change_logo.png"
+                alt="Forty Eight"
+                width={160}
+                height={59}
+                className={`${styles.darkThemeLogo} h-auto w-[92px] max-h-[34px] object-contain sm:w-[112px] sm:max-h-[42px] lg:w-[148px] lg:max-h-[54px]`}
+                priority
+              />
+              <Image
                 src="/final_logo.jpeg"
                 alt="Forty Eight"
                 width={160}
                 height={59}
-                className="h-auto w-[92px] max-h-[34px] object-contain sm:w-[112px] sm:max-h-[42px] lg:w-[148px] lg:max-h-[54px]"
+                className={`${styles.lightThemeLogo} h-auto w-[92px] max-h-[34px] object-contain sm:w-[112px] sm:max-h-[42px] lg:w-[148px] lg:max-h-[54px]`}
                 priority
               />
             </Link>
@@ -582,11 +590,18 @@ const Navbar = () => {
                   className="flex items-center"
                 >
                   <Image
+                    src="/change_logo.png"
+                    alt="Logo"
+                    width={70}
+                    height={18}
+                    className={`${styles.darkThemeLogo} max-h-5 sm:max-h-6 w-auto object-contain`}
+                  />
+                  <Image
                     src="/final_logo.jpeg"
                     alt="Logo"
                     width={70}
                     height={18}
-                    className="max-h-5 sm:max-h-6 w-auto object-contain"
+                    className={`${styles.lightThemeLogo} max-h-5 sm:max-h-6 w-auto object-contain`}
                   />
                 </Link>
                 <button

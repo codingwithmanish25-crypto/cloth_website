@@ -1,4 +1,20 @@
 /* Base styles */
+.darkThemeLogo {
+  display: block;
+}
+
+.lightThemeLogo {
+  display: none;
+}
+
+:global(html[data-theme="light"]) .darkThemeLogo {
+  display: none;
+}
+
+:global(html[data-theme="light"]) .lightThemeLogo {
+  display: block;
+}
+
 .navItem {
   padding: 1.25rem 0.45rem;
   color: #d4d4d8;
